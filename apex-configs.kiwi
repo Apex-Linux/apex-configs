@@ -9,7 +9,7 @@
         <version>1.0.0</version>
         <packagemanager>zypper</packagemanager>
         <rpm-check-signatures>false</rpm-check-signatures>
-        <type image="iso" volid="APEX_LINUX" size="4G" filesystem="squashfs"/>
+        <type image="iso" volid="APEX_LINUX" filesystem="squashfs"/>
     </preferences>
     <users>
         <user name="root" password="root" groups="root"/>
