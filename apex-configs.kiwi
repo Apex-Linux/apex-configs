@@ -22,6 +22,11 @@
         <package name="zypper"/>
         <package name="openSUSE-release"/>
         <package name="openSUSE-release-appliance-custom"/>
+        <package name="iproute2"/>
+        <package name="coreutils"/>
+        <package name="util-linux"/>
+        <package name="tar"/>
+        <package name="squashfs"/>
     </packages>
 
     <packages type="image">
