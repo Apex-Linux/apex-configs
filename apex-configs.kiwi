@@ -9,8 +9,7 @@
         <version>1.0.0</version>
         <packagemanager>zypper</packagemanager>
         <rpm-check-signatures>false</rpm-check-signatures>
-        <bootloader name="grub2" console="gfxterm" timeout="10"/>
-        <type image="iso" volid="APEX_LINUX" filesystem="squashfs" firmware="uefi"/>
+        <type image="iso" volid="APEX_LINUX" filesystem="squashfs" bootloader="grub2" firmware="uefi"/>
     </preferences>
 
     <repository type="rpm-md">
