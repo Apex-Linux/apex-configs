@@ -5,12 +5,12 @@
         <contact>apex-linux@example.com</contact>
         <specification>Apex Linux Tumbleweed Edition</specification>
     </description>
-    <preferences>
-        <version>1.0.0</version>
-        <packagemanager>zypper</packagemanager>
-        <rpm-check-signatures>false</rpm-check-signatures>
-        <type image="iso" hostname="apex-linux" volid="APEX_LINUX" hybrid="true"/>
-    </preferences>
+   <preferences>
+    <version>1.0.0</version>
+    <packagemanager>zypper</packagemanager>
+    <rpm-check-signatures>false</rpm-check-signatures>
+    <type image="iso" hostname="apex-linux" volid="APEX_LINUX" hybrid="true" size="4G"/>
+   </preferences>
     <repository type="rpm-md">
         <source path="obsrepository://"/>
     </repository>
