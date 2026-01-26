@@ -9,7 +9,7 @@
         <version>1.0.0</version>
         <packagemanager>zypper</packagemanager>
         <rpm-check-signatures>false</rpm-check-signatures>
-        <type image="iso" volid="APEX_LINUX" filesystem="squashfs" bootloader="grub2" firmware="uefi"/>
+        <type image="iso" volid="APEX_LINUX" filesystem="squashfs"/>
     </preferences>
 
     <repository type="rpm-md">
