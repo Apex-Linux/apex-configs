@@ -9,10 +9,7 @@
         <version>1.0.0</version>
         <packagemanager>zypper</packagemanager>
         <rpm-check-signatures>false</rpm-check-signatures>
-        <type image="iso" volid="APEX_LINUX" filesystem="squashfs">
-            <size unit="G">4</size>
-            <flags hybrid="true" unified="true"/>
-        </type>
+        <type image="iso" volid="APEX_LINUX" size="4G" filesystem="squashfs"/>
     </preferences>
     <users>
         <user name="root" password="root" groups="root"/>
@@ -21,7 +18,6 @@
     <repository type="rpm-md">
         <source path="obsrepositories:/"/>
     </repository>
-
     <packages type="image">
         <package name="openSUSE-release"/>
         <package name="openSUSE-release-appliance-custom"/>
