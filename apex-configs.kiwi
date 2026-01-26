@@ -42,7 +42,7 @@
         <package name="libwayland-client0"/>
         
         <package name="NetworkManager"/>
-        <package name="systemd-network-config-default"/>
+        <package name="systemd-networkd"/>
 
         <package name="vim"/>
         <package name="fastfetch"/>
