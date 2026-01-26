@@ -5,6 +5,8 @@ set -e
 # --- Networking ---
 # Activate NetworkManager so the ISO has internet out of the box
 systemctl enable NetworkManager
+# Enable the display manager for KDE
+systemctl enable sddm
 
 # --- Branding (Apex Linux Identity) ---
 # This re-labels the system so it identifies as Apex
