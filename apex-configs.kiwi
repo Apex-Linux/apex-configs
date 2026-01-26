@@ -15,6 +15,8 @@
         <source path="obsrepositories:/"/>
     </repository>
     <packages type="image">
+        <package name="openSUSE-release"/>
+        <package name="openSUSE-release-livecd-x11"/>
         <package name="patterns-openSUSE-base"/>
         <package name="kernel-default"/>
         <package name="grub2-x86_64-efi"/>
