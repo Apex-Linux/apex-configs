@@ -9,7 +9,8 @@
         <version>1.0.0</version>
         <packagemanager>zypper</packagemanager>
         <rpm-check-signatures>false</rpm-check-signatures>
-        <type image="iso" volid="APEX_LINUX" filesystem="squashfs" bootloader="grub2" firmware="uefi"/>
+        <type image="iso" volid="APEX_LINUX" filesystem="squashfs"/>
+        <bootloader name="grub2" console="gfxterm" timeout="10"/>
     </preferences>
 
     <repository type="rpm-md">
@@ -35,6 +36,7 @@
         <package name="dracut-kiwi-live"/>
         <package name="grub2"/>
         <package name="grub2-x86_64-efi"/>
+        <package name="grub2-branding-openSUSE"/>
         <package name="Mesa"/>
         <package name="plasma6-desktop"/>
         <package name="plasma6-session"/>
