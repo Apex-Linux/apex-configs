@@ -15,9 +15,9 @@
         <user name="root" password="root" groups="root"/>
         <user name="apex" password="apex" groups="users,wheel"/>
     </users>
-    <repository type="rpm-md">
-        <source path="obsrepository:/openSUSE_Tumbleweed"/>
-    </repository>
+   <repository type="rpm-md">
+      <source path="obsrepository://openSUSE_Tumbleweed"/>
+   </repository>
     <packages type="image">
         <package name="openSUSE-release"/>
         <package name="openSUSE-release-livecd-x11"/>
