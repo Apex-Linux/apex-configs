@@ -4,8 +4,14 @@
     <parameter name="scm">git</parameter>
     <parameter name="revision">main</parameter>
   </service>
+  
   <service name="extract_file">
     <parameter name="archive">*.obscpio</parameter>
-    <parameter name="files">*/apex-configs.kiwi */config.sh</parameter>
+    <parameter name="files">*/apex-configs.kiwi</parameter>
+  </service>
+
+  <service name="extract_file">
+    <parameter name="archive">*.obscpio</parameter>
+    <parameter name="files">*/config.sh</parameter>
   </service>
 </services>
