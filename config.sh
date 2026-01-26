@@ -3,13 +3,13 @@
 set -e
 
 # --- Networking ---
-# Activate NetworkManager so the ISO has internet out of the box
 systemctl enable NetworkManager
-# Enable the display manager for KDE
-systemctl enable sddm
+
+# --- Display Manager ---
+# Use --force to overwrite the existing display-manager-legacy symlink
+systemctl enable --force sddm
 
 # --- Branding (Apex Linux Identity) ---
-# This re-labels the system so it identifies as Apex
 if [ -f /etc/os-release ]; then
     sed -i 's/openSUSE Tumbleweed/Apex Linux/g' /etc/os-release
     sed -i 's/^NAME=.*/NAME="Apex Linux"/' /etc/os-release
