@@ -1,12 +1,11 @@
 <services>
   <service name="obs_scm">
-    <parameter name="url">https://github.com/Apex-Linux/apex-configs.git\</parameter\>
+    <parameter name="url">https://github.com/Apex-Linux/apex-configs.git</parameter>
     <parameter name="scm">git</parameter>
     <parameter name="revision">main</parameter>
   </service>
-  <service name="tar" mode="buildtime"/>
-  <service name="recompress" mode="buildtime">
-    <parameter name="file">*.tar</parameter>
-    <parameter name="compression">xz</parameter>
+  <service name="extract_file" mode="buildtime">
+    <parameter name="archive">*.obscpio</parameter>
+    <parameter name="files">*/apex-configs.kiwi */config.sh</parameter>
   </service>
 </services>
