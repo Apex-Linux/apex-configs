@@ -35,14 +35,14 @@
 
         <package name="Mesa"/> 
         <package name="plasma6-desktop"/>
-        <package name="plasma6-session-wayland"/>
+        <package name="plasma6-session"/>
         <package name="konsole"/>
         <package name="dolphin"/>
         <package name="libwayland-server0"/>
         <package name="libwayland-client0"/>
         
         <package name="NetworkManager"/>
-        <package name="network-config-manager"/>
+        <package name="systemd-network-config-default"/>
 
         <package name="vim"/>
         <package name="fastfetch"/>
