@@ -45,8 +45,6 @@
         
         <package name="NetworkManager"/>
         <package name="plasma6-nm"/>
-        <package name="systemd-networkd"/>
-
         <package name="vim"/>
         <package name="fastfetch"/>
    </packages>
