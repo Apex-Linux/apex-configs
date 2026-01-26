@@ -16,7 +16,7 @@
     <user name="apex" password="apex" groups="users,wheel"/>
 </users>
    <repository type="rpm-md">
-     <source path="obsrepository://"/>
+     <source path="obsrepository:/openSUSE_Tumbleweed"/>
    </repository>
   <packages type="image">
     <package name="openSUSE-release"/>
