@@ -2,7 +2,7 @@
 <image schemaversion="7.4" name="Apex-Linux">
     <description type="system">
         <author>ackerman</author>
-        <contact>apex-linux@example.com</contact>
+        <contact>mdzunaid384@gmail.com</contact>
         <specification>Apex Linux Tumbleweed Edition</specification>
     </description>
     <preferences>
@@ -15,9 +15,9 @@
         <user name="root" password="root" groups="root"/>
         <user name="apex" password="apex" groups="users,wheel"/>
     </users>
-   <repository type="rpm-md">
-      <source path="obsrepository://openSUSE_Tumbleweed"/>
-   </repository>
+    <repository type="rpm-md">
+        <source path="obsrepository:/"/>
+    </repository>
     <packages type="image">
         <package name="openSUSE-release"/>
         <package name="openSUSE-release-livecd-x11"/>
