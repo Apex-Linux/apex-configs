@@ -9,8 +9,12 @@
     <version>1.0.0</version>
     <packagemanager>zypper</packagemanager>
     <rpm-check-signatures>false</rpm-check-signatures>
-    <type image="iso" hostname="apex-linux" volid="APEX_LINUX" hybrid="true" size="4G"/>
+    <type image="iso" hostname="apex-linux" volid="APEX_LINUX" hybrid="true" size="4G" flags="unified"/>
    </preferences>
+   <users>
+    <user name="root" password="root" groups="root"/>
+    <user name="apex" password="apex" groups="users,wheel"/>
+</users>
    <repository type="rpm-md">
      <source path="obsrepository:/"/>
    </repository>
