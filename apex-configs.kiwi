@@ -1,11 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <image schemaversion="8.3" name="Apex-Linux">
+
     <description type="system">
         <author>ackerman</author>
         <contact>mdzunaid384@gmail.com</contact>
-        <specification>Apex Linux - Independent Tumbleweed Distribution</specification>
+        <specification>
+            Apex Linux – Independent openSUSE Tumbleweed based distribution
+        </specification>
     </description>
 
+    <!-- ================= Preferences ================= -->
     <preferences arch="x86_64">
         <version>1.0.0</version>
         <packagemanager>zypper</packagemanager>
@@ -13,15 +17,25 @@
         <locale>en_US</locale>
         <timezone>UTC</timezone>
 
-        <type image="iso" volid="APEX_LINUX" filesystem="squashfs" flags="overlay" firmware="uefi" kernelcmdline="splash quiet">
+        <type image="iso"
+              filesystem="squashfs"
+              flags="overlay"
+              firmware="uefi"
+              kernelcmdline="quiet splash">
             <bootloader name="grub2" timeout="10"/>
         </type>
     </preferences>
 
+    <!-- ================= Repositories ================= -->
     <repository type="rpm-md" alias="tumbleweed-oss">
         <source path="https://download.opensuse.org/tumbleweed/repo/oss/"/>
     </repository>
 
+    <repository type="rpm-md" alias="tumbleweed-non-oss">
+        <source path="https://download.opensuse.org/tumbleweed/repo/non-oss/"/>
+    </repository>
+
+    <!-- ================= Bootstrap ================= -->
     <packages type="bootstrap">
         <package name="filesystem"/>
         <package name="glibc"/>
@@ -32,17 +46,24 @@
         <package name="openSUSE-release"/>
     </packages>
 
+    <!-- ================= Image Packages ================= -->
     <packages type="image">
+
+        <!-- Base system -->
         <package name="patterns-openSUSE-base"/>
         <package name="patterns-openSUSE-enhanced_base"/>
         <package name="patterns-openSUSE-x11"/>
-        <package name="patterns-openSUSE-kde_plasma"/>
 
+        <!-- KDE Plasma 6 (CORRECT PATTERN) -->
+        <package name="patterns-kde-kde_plasma"/>
+
+        <!-- Kernel & boot -->
         <package name="kernel-default"/>
         <package name="kernel-firmware-all"/>
         <package name="dracut"/>
         <package name="dracut-kiwi-live"/>
-        
+
+        <!-- Bootloader -->
         <package name="grub2"/>
         <package name="grub2-x86_64-efi"/>
         <package name="shim"/>
@@ -50,30 +71,49 @@
         <package name="mtools"/>
         <package name="efibootmgr"/>
 
+        <!-- Display manager -->
         <package name="sddm"/>
-        <package name="konsole"/>
-        <package name="dolphin"/>
-        <package name="plasma6-nm"/>
+
+        <!-- Networking -->
         <package name="NetworkManager"/>
         <package name="NetworkManager-branding-openSUSE"/>
+        <package name="plasma6-nm"/>
+
+        <!-- Audio / Video -->
         <package name="pipewire"/>
         <package name="pipewire-pulseaudio"/>
         <package name="wireplumber"/>
         <package name="Mesa-dri"/>
 
+        <!-- Essential KDE apps -->
+        <package name="konsole"/>
+        <package name="dolphin"/>
+
+        <!-- System utilities -->
         <package name="sudo"/>
         <package name="shadow"/>
         <package name="vim"/>
         <package name="fastfetch"/>
         <package name="hicolor-icon-theme"/>
         <package name="polkit-default-privs"/>
-        
+
+        <!-- Kiwi system deps -->
         <package name="kiwi-systemdeps-iso-media"/>
         <package name="kiwi-systemdeps-bootloaders"/>
+
     </packages>
 
+    <!-- ================= Users ================= -->
     <users>
-        <user name="root" passwordhash="$6$rounds=4096$ApexLinux$7iH6D.Wq5v6O/M.yX1gG6O5Bv0Fv9f6W1v7O8p9G7Q8" groups="root" home="/root"/>
-        <user name="apex" passwordhash="$6$rounds=4096$ApexUser$O8Z5rGv9Hj5.m9eQ7wX1V6u0F4z3Y2x8P1T" groups="users,wheel,video,audio" home="/home/apex"/>
+        <user name="root"
+              groups="root"
+              home="/root"
+              passwordhash="$6$rounds=4096$ApexLinux$7iH6D.Wq5v6O/M.yX1gG6O5Bv0Fv9f6W1v7O8p9G7Q8"/>
+
+        <user name="apex"
+              groups="users,wheel,video,audio"
+              home="/home/apex"
+              passwordhash="$6$rounds=4096$ApexUser$O8Z5rGv9Hj5.m9eQ7wX1V6u0F4z3Y2x8P1T"/>
     </users>
+
 </image>
