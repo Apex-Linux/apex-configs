@@ -6,7 +6,7 @@
         <specification>Apex Linux - Independent Tumbleweed Distribution</specification>
     </description>
 
-    <preferences>
+    <preferences arch="x86_64">
         <version>1.0.0</version>
         <packagemanager>zypper</packagemanager>
         <rpm-check-signatures>false</rpm-check-signatures>
