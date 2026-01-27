@@ -1,50 +1,127 @@
-#!/bin/bash
-# Exit if any command fails
-set -e
+#!/usr/bin/env bash
+# Apex Linux Phase 4: Final Hardened & Self-Auditing Configuration
+set -euo pipefail
 
-# --- Networking ---
-systemctl enable NetworkManager
+# --- Safety Check: Ensure Root ---
+if [ "$(id -u)" -ne 0 ]; then
+    echo "ERROR: Apex DNA initialization must be run as root!" >&2
+    exit 1
+fi
 
-# --- Display Manager ---
-# Force enable SDDM to ensure it takes precedence
-systemctl enable --force sddm
+LIVE_USER="apex"
+LIVE_PASS="" # Production: Locked account (SDDM autologin is used)
 
-# --- Force Plasma 6 Wayland Session ---
-# Per 2026 Tumbleweed standards, we use plasmawayland.desktop
+echo "--- [1/5] Initializing User & Group Security ---"
+ensure_group() {
+    local g="$1"
+    if getent group "$g" >/dev/null 2>&1; then
+        echo "  [OK] Group '$g' already exists."
+    else
+        groupadd "$g" && echo "  [NEW] Group '$g' created."
+    fi
+}
+
+for g in wheel video audio users render; do
+    ensure_group "$g"
+done
+
+if ! id "$LIVE_USER" &>/dev/null; then
+    useradd -m -s /bin/bash -G wheel,video,audio,users,render "$LIVE_USER"
+    [ -n "$LIVE_PASS" ] && echo "$LIVE_USER:$LIVE_PASS" | chpasswd || passwd -l "$LIVE_USER"
+    
+    # Secure Sudoers (Mode 0440 is mandatory for sudo to function)
+    cat > /etc/sudoers.d/apex <<'EOF'
+# WARNING: This configuration is for Apex Live Media ONLY.
+# Passwordless sudo is enabled for the live user experience.
+apex ALL=(ALL) NOPASSWD: ALL
+EOF
+    chmod 0440 /etc/sudoers.d/apex
+    echo "  [OK] Live user '$LIVE_USER' initialized with 0440 sudoers."
+
+    # Container Support: Idempotent subuid/subgid mapping for Podman
+    touch /etc/subuid /etc/subgid
+    chmod 0644 /etc/subuid /etc/subgid
+    grep -q "^${LIVE_USER}:" /etc/subuid || echo "${LIVE_USER}:100000:65536" >> /etc/subuid
+    grep -q "^${LIVE_USER}:" /etc/subgid || echo "${LIVE_USER}:100000:65536" >> /etc/subgid
+    echo "  [OK] Rootless container mappings applied."
+else
+    echo "  [SKIP] User '$LIVE_USER' already exists."
+fi
+
+echo "--- [2/5] Configuring Services (Chroot Insurance) ---"
+systemctl enable NetworkManager 2>/dev/null || true
+systemctl enable sddm 2>/dev/null || true
+
+# Bulletproof Unit Path Check (Covers /usr/lib and /lib)
+for possible in /usr/lib/systemd/system/sddm.service /lib/systemd/system/sddm.service; do
+  if [ -f "$possible" ]; then
+    mkdir -p /etc/systemd/system/graphical.target.wants
+    ln -sf "$possible" /etc/systemd/system/display-manager.service
+    ln -sf "$possible" /etc/systemd/system/graphical.target.wants/sddm.service
+    echo "  [OK] Manual SDDM symlinks created from $possible"
+    break
+  fi
+done
+
+echo "--- [3/5] Detecting Plasma 6 Wayland Session ---"
 mkdir -p /etc/sddm.conf.d
+find_session() {
+    local candidate
+    candidate=$(find /usr/share/wayland-sessions /usr/share/xsessions -maxdepth 1 -type f -name '*plasma*.desktop' 2>/dev/null | head -n1 || true)
+    [ -z "$candidate" ] && candidate=$(find /usr/share/wayland-sessions /usr/share/xsessions -maxdepth 1 -type f -name '*.desktop' 2>/dev/null | head -n1 || true)
+    [ -n "$candidate" ] && basename "$candidate" || echo "plasmawayland.desktop"
+}
+SESSION="$(find_session)"
+echo "  [INFO] Target Session: $SESSION"
+
 cat > /etc/sddm.conf.d/10-wayland.conf << EOF
 [General]
 DisplayServer=wayland
+GreeterEnvironment=QT_WAYLAND_SHELL_INTEGRATION=layer-shell
+
 [Autologin]
-Session=plasmawayland.desktop
+User=${LIVE_USER}
+Session=${SESSION}
+Relogin=false
 EOF
 
-# --- Branding (Apex Linux Identity) ---
-if [ -f /etc/os-release ]; then
-    cat > /etc/os-release << EOF
+echo "--- [4/5] Applying Apex Linux Branding ---"
+cat > /etc/os-release << 'EOF'
 NAME="Apex Linux"
-VERSION="Kde Edition"
+VERSION="2026 (Plasma 6 Edition)"
 ID=apexlinux
-ID_LIKE="suse opensuse"
-PRETTY_NAME="Apex Linux Kde Edition"
-ANSI_COLOR="0;34"
-CPE_NAME="cpe:/o:apexlinux:apexlinux:2026"
-HOME_URL="https://github.com/Apex-Linux/apex-configs"
-VARIANT="Plasma 6 Edition"
-VARIANT_ID=plasma
+ID_LIKE="suse opensuse tumbleweed"
+PRETTY_NAME="Apex Linux Plasma 6 Edition"
+VARIANT="KDE Plasma 6"
+HOME_URL="https://github.com/Apex-Linux"
 EOF
+echo "apex-linux" > /etc/hostname
+echo "  [OK] Branding and hostname applied."
+
+echo "--- [5/5] Final Hardware & System Tweaks ---"
+for bin in /usr/bin/newuidmap /usr/bin/newgidmap; do
+    if [ -x "$bin" ]; then
+        chown root:root "$bin"
+        if command -v setcap >/dev/null 2>&1; then
+            [[ "$bin" == *newuidmap ]] && setcap cap_setuid+ep "$bin" || setcap cap_setgid+ep "$bin"
+            echo "  [CAPS] Set capabilities for $(basename "$bin")"
+        else
+            chmod 4755 "$bin"
+            echo "  [SUID] Set SUID bit for $(basename "$bin")"
+        fi
+    fi
+done
+
+systemctl set-default graphical.target
+[ -x /usr/bin/systemd-hwdb ] && systemd-hwdb update || true
+
+# Safe Zypper optimization for faster repo handling
+ZYPP_CONF="/etc/zypp/zypp.conf"
+if [ -f "$ZYPP_CONF" ]; then
+    grep -q '^solver.onlyRequires' "$ZYPP_CONF" && \
+    sed -i 's/^solver.onlyRequires.*/solver.onlyRequires = true/' "$ZYPP_CONF" || \
+    echo 'solver.onlyRequires = true' >> "$ZYPP_CONF"
 fi
 
-# Set the hostname
-echo "apex-linux" > /etc/hostname
-
-# --- System & Performance Tweaks ---
-# Keeps the Live ISO lightweight by skipping unnecessary recommended packages
-sed -i 's/^# solver.onlyRequires.*/solver.onlyRequires = true/' /etc/zypp/zypp.conf
-
-# Rebuild hardware database for Live ISO driver detection
-systemd-hwdb update
-udevadm trigger
-
-echo "Apex Linux DNA successfully initialized!"
+echo "--- Apex Linux DNA Successfully Initialized! ---"
 exit 0
