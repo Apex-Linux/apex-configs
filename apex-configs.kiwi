@@ -10,8 +10,10 @@
         <version>1.0.0</version>
         <packagemanager>zypper</packagemanager>
         <rpm-check-signatures>false</rpm-check-signatures>
-        <timezone>UTC</timezone>
+        
         <locale>en_US.UTF-8</locale>
+        <timezone>UTC</timezone>
+
         <type image="iso" volid="APEX_LINUX" filesystem="squashfs" flags="overlay,hybrid" firmware="uefi" bootiso="true" kernelcmdline="splash quiet">
             <bootloader name="grub2" timeout="10"/>
         </type>
