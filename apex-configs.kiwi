@@ -10,11 +10,11 @@
         <version>1.0.0</version>
         <packagemanager>zypper</packagemanager>
         <rpm-check-signatures>false</rpm-check-signatures>
-        <locale>en_US.UTF-8</locale>
-        <timezone>UTC</timezone>
         <type image="iso" volid="APEX_LINUX" filesystem="squashfs" flags="overlay,hybrid" firmware="uefi" bootiso="true" kernelcmdline="splash quiet">
             <bootloader name="grub2" timeout="10"/>
         </type>
+        <locale>en_US.UTF-8</locale>
+        <timezone>UTC</timezone>
     </preferences>
 
     <repository type="rpm-md">
@@ -41,7 +41,6 @@
     <packages type="image">
         <package name="kernel-default"/>
         <package name="kernel-firmware-all"/>
-        
         <package name="dracut"/>
         <package name="dracut-kiwi-live"/>
         <package name="kiwi-systemdeps-iso-media"/>
@@ -49,18 +48,15 @@
         <package name="efibootmgr"/>
         <package name="dosfstools"/>
         <package name="mtools"/>
-
         <package name="grub2"/>
         <package name="grub2-x86_64-efi"/>
         <package name="grub2-i386-pc"/>
         <package name="shim"/>
         <package name="syslinux"/>
-
         <package name="udev"/>
         <package name="dbus-1"/>
         <package name="sudo"/>
         <package name="shadow"/>
-
         <package name="Mesa"/>
         <package name="plasma6-desktop"/>
         <package name="plasma6-session"/>
@@ -72,20 +68,19 @@
         <package name="plasma6-nm"/>
         <package name="vim"/>
         <package name="fastfetch"/>
-
         <package name="pipewire"/>
-        <package name="pipewire-pulseaudio"/>   
+        <package name="pipewire-pulseaudio"/>
         <package name="libpulse0"/>
-        <package name="wireplumber"/> 
+        <package name="wireplumber"/>
         <package name="hicolor-icon-theme"/>
         <package name="desktop-file-utils"/>
     </packages>
 
-    <config>
-        <script name="config.sh" execute="chroot"/>
-    </config>
-
     <users>
         <user name="root" password="linux" groups="root" home="/root"/>
     </users>
+
+    <config>
+        <script name="config.sh" execute="chroot"/>
+    </config>
 </image>
