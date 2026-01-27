@@ -5,13 +5,14 @@
         <contact>mdzunaid384@gmail.com</contact>
         <specification>Apex Linux Tumbleweed Edition</specification>
     </description>
+
     <preferences>
         <version>1.0.0</version>
         <packagemanager>zypper</packagemanager>
         <rpm-check-signatures>false</rpm-check-signatures>
-        <locale>en_US</locale>
+        <locale>en_US.UTF-8</locale>
         <timezone>UTC</timezone>
-        <type image="iso" volid="APEX_LINUX" filesystem="squashfs" flags="overlay,hybrid" firmware="uefi" kernelcmdline="splash quiet">
+        <type image="iso" volid="APEX_LINUX" filesystem="squashfs" flags="overlay,hybrid" firmware="uefi" bootiso="true" kernelcmdline="splash quiet">
             <bootloader name="grub2" timeout="10"/>
         </type>
     </preferences>
@@ -43,13 +44,18 @@
         
         <package name="dracut"/>
         <package name="dracut-kiwi-live"/>
-        <package name="kiwi-boot-requires"/>
+        <package name="kiwi-bootloader-config"/>
+        <package name="kiwi-systemdeps-iso-media"/>
+        <package name="kiwi-systemdeps-bootloaders"/>
+        <package name="efibootmgr"/>
+        <package name="dosfstools"/>
+        <package name="mtools"/>
+
         <package name="grub2"/>
         <package name="grub2-x86_64-efi"/>
         <package name="grub2-i386-pc"/>
         <package name="shim"/>
         <package name="syslinux"/>
-        <package name="grub2-branding-openSUSE"/>
 
         <package name="udev"/>
         <package name="dbus-1"/>
@@ -68,6 +74,10 @@
         <package name="vim"/>
         <package name="fastfetch"/>
     </packages>
+
+    <config>
+        <script name="config.sh" execute="chroot"/>
+    </config>
 
     <users>
         <user name="root" password="linux" groups="root" home="/root"/>
