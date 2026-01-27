@@ -82,7 +82,7 @@
 
         <!-- Graphics -->
         <package name="Mesa-dri"/>
-        <package name="Mesa-gallium"/>
+        
 
         <!-- Utilities -->
         <package name="sudo"/>
