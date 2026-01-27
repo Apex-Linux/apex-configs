@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<image schemaversion="7.4" name="Apex-Linux">
+<image schemaversion="8.3" name="Apex-Linux">
     <description type="system">
         <author>ackerman</author>
         <contact>mdzunaid384@gmail.com</contact>
@@ -9,7 +9,7 @@
         <version>1.0.0</version>
         <packagemanager>zypper</packagemanager>
         <rpm-check-signatures>false</rpm-check-signatures>
-        <type image="iso" volid="APEX_LINUX" filesystem="squashfs" primary="true"/>
+        <type image="iso" volid="APEX_LINUX" filesystem="squashfs"/>
     </preferences>
 
     <repository type="rpm-md">
@@ -34,8 +34,10 @@
         <package name="kernel-default"/>
         <package name="dracut-kiwi-live"/>
         <package name="grub2"/>
-        <package name="grub2-x86_64-efi"/>
-        <package name="shim"/>
+        <package name="grub2-i386-pc"/>     
+        <package name="grub2-x86_64-efi"/>  
+        <package name="shim"/>    
+
         <package name="Mesa"/>
         <package name="plasma6-desktop"/>
         <package name="plasma6-session"/>
