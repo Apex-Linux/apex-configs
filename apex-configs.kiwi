@@ -35,7 +35,7 @@
         <package name="dracut-kiwi-live"/>
         <package name="grub2"/>
         <package name="grub2-x86_64-efi"/>
-        <package name="grub2-branding-openSUSE"/>
+        <package name="shim"/>
         <package name="Mesa"/>
         <package name="plasma6-desktop"/>
         <package name="plasma6-session"/>
