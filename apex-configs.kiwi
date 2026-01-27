@@ -10,11 +10,11 @@
         <version>1.0.0</version>
         <packagemanager>zypper</packagemanager>
         <rpm-check-signatures>false</rpm-check-signatures>
+        <locale>en_US.UTF-8</locale>
+        <timezone>UTC</timezone>
         <type image="iso" volid="APEX_LINUX" filesystem="squashfs" flags="overlay,hybrid" firmware="uefi" bootiso="true" kernelcmdline="splash quiet">
             <bootloader name="grub2" timeout="10"/>
         </type>
-        <locale>en_US.UTF-8</locale>
-        <timezone>UTC</timezone>
     </preferences>
 
     <repository type="rpm-md">
@@ -76,11 +76,11 @@
         <package name="desktop-file-utils"/>
     </packages>
 
-    <users>
-        <user name="root" password="linux" groups="root" home="/root"/>
-    </users>
-
     <config>
         <script name="config.sh" execute="chroot"/>
     </config>
+
+    <users>
+        <user name="root" password="linux" groups="root" home="/root"/>
+    </users>
 </image>
