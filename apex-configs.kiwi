@@ -47,9 +47,7 @@
         <package name="grub2-x86_64-efi"/>
         <package name="shim"/>
 
-        <package name="kiwi-live"/>
-        <package name="polkit-default-privs"/>
-        
+        <package name="polkit-default-privs"/>     
         <package name="patterns-kde-kde_plasma6"/>
         <package name="sddm"/>
         <package name="konsole"/>
