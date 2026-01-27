@@ -76,11 +76,11 @@
         <package name="desktop-file-utils"/>
     </packages>
 
-    <config>
-        <script name="config.sh" execute="chroot"/>
-    </config>
-
     <users>
         <user name="root" password="linux" groups="root" home="/root"/>
     </users>
+
+    <config>
+        <script name="config.sh" execute="chroot"/>
+    </config>
 </image>
