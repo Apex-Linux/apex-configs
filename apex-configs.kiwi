@@ -44,7 +44,6 @@
         
         <package name="dracut"/>
         <package name="dracut-kiwi-live"/>
-        <package name="kiwi-bootloader-config"/>
         <package name="kiwi-systemdeps-iso-media"/>
         <package name="kiwi-systemdeps-bootloaders"/>
         <package name="efibootmgr"/>
@@ -75,7 +74,7 @@
         <package name="fastfetch"/>
 
         <package name="pipewire"/>
-        <package name="pipewire-pulse"/>
+        <package name="pipewire-pulseaudio"/>   
         <package name="libpulse0"/>
         <package name="wireplumber"/> 
         <package name="hicolor-icon-theme"/>
