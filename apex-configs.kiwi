@@ -4,20 +4,19 @@
     <description type="system">
         <author>ackerman</author>
         <contact>mdzunaid384@gmail.com</contact>
-        <specification>
-            Apex Linux – Independent openSUSE Tumbleweed based distribution
-        </specification>
+        <specification>Apex Linux – Tumbleweed-based Distribution</specification>
     </description>
 
-    <!-- ================= Preferences ================= -->
     <preferences arch="x86_64">
         <version>1.0.0</version>
         <packagemanager>zypper</packagemanager>
         <rpm-check-signatures>false</rpm-check-signatures>
         <locale>en_US</locale>
         <timezone>UTC</timezone>
+        <keyboard>us</keyboard>
 
         <type image="iso"
+              volid="APEX_LINUX"
               filesystem="squashfs"
               flags="overlay"
               firmware="uefi"
@@ -26,16 +25,16 @@
         </type>
     </preferences>
 
-    <!-- ================= Repositories ================= -->
-    <repository type="rpm-md" alias="tumbleweed-oss">
-        <source path="https://download.opensuse.org/tumbleweed/repo/oss/"/>
+    <!-- OBS INTERNAL REPOSITORIES -->
+    <repository type="rpm-md" alias="factory-oss">
+        <source path="obs:/openSUSE:Factory/standard"/>
     </repository>
 
-    <repository type="rpm-md" alias="tumbleweed-non-oss">
-        <source path="https://download.opensuse.org/tumbleweed/repo/non-oss/"/>
+    <repository type="rpm-md" alias="factory-non-oss">
+        <source path="obs:/openSUSE:Factory:NonFree/standard"/>
     </repository>
 
-    <!-- ================= Bootstrap ================= -->
+    <!-- BOOTSTRAP -->
     <packages type="bootstrap">
         <package name="filesystem"/>
         <package name="glibc"/>
@@ -46,16 +45,12 @@
         <package name="openSUSE-release"/>
     </packages>
 
-    <!-- ================= Image Packages ================= -->
+    <!-- IMAGE PACKAGES -->
     <packages type="image">
 
         <!-- Base system -->
-        <package name="patterns-openSUSE-base"/>
-        <package name="patterns-openSUSE-enhanced_base"/>
-        <package name="patterns-openSUSE-x11"/>
-
-        <!-- KDE Plasma 6 (CORRECT PATTERN) -->
-        <package name="patterns-kde-kde_plasma"/>
+        <package name="patterns-base-base"/>
+        <package name="patterns-base-enhanced_base"/>
 
         <!-- Kernel & boot -->
         <package name="kernel-default"/>
@@ -68,52 +63,57 @@
         <package name="grub2-x86_64-efi"/>
         <package name="shim"/>
         <package name="dosfstools"/>
-        <package name="mtools"/>
         <package name="efibootmgr"/>
 
-        <!-- Display manager -->
+        <!-- KDE Plasma (explicit, OBS-safe) -->
+        <package name="plasma6-desktop"/>
+        <package name="plasma6-workspace"/>
         <package name="sddm"/>
-
-        <!-- Networking -->
-        <package name="NetworkManager"/>
-        <package name="NetworkManager-branding-openSUSE"/>
+        <package name="konsole"/>
+        <package name="dolphin"/>
         <package name="plasma6-nm"/>
 
-        <!-- Audio / Video -->
+        <!-- Networking & audio -->
+        <package name="NetworkManager"/>
+        <package name="NetworkManager-branding-openSUSE"/>
         <package name="pipewire"/>
         <package name="pipewire-pulseaudio"/>
         <package name="wireplumber"/>
+
+        <!-- Graphics -->
         <package name="Mesa-dri"/>
+        <package name="Mesa-gallium"/>
 
-        <!-- Essential KDE apps -->
-        <package name="konsole"/>
-        <package name="dolphin"/>
-
-        <!-- System utilities -->
+        <!-- Utilities -->
         <package name="sudo"/>
         <package name="shadow"/>
         <package name="vim"/>
         <package name="fastfetch"/>
-        <package name="hicolor-icon-theme"/>
         <package name="polkit-default-privs"/>
+        <package name="hicolor-icon-theme"/>
 
-        <!-- Kiwi system deps -->
+        <!-- KIWI deps -->
         <package name="kiwi-systemdeps-iso-media"/>
         <package name="kiwi-systemdeps-bootloaders"/>
 
     </packages>
 
-    <!-- ================= Users ================= -->
+    <!-- USERS -->
     <users>
         <user name="root"
+              passwordhash="$6$rounds=4096$ApexLinux$7iH6D.Wq5v6O/M.yX1gG6O5Bv0Fv9f6W1v7O8p9G7Q8"
               groups="root"
-              home="/root"
-              passwordhash="$6$rounds=4096$ApexLinux$7iH6D.Wq5v6O/M.yX1gG6O5Bv0Fv9f6W1v7O8p9G7Q8"/>
+              home="/root"/>
 
         <user name="apex"
+              passwordhash="$6$rounds=4096$ApexUser$O8Z5rGv9Hj5.m9eQ7wX1V6u0F4z3Y2x8P1T"
               groups="users,wheel,video,audio"
-              home="/home/apex"
-              passwordhash="$6$rounds=4096$ApexUser$O8Z5rGv9Hj5.m9eQ7wX1V6u0F4z3Y2x8P1T"/>
+              home="/home/apex"/>
     </users>
+
+    <!-- Silence OBS VM console warning -->
+    <systemd>
+        <disable name="systemd-vconsole-setup.service"/>
+    </systemd>
 
 </image>
