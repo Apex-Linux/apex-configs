@@ -9,7 +9,7 @@
         <version>1.0.0</version>
         <packagemanager>zypper</packagemanager>
         <rpm-check-signatures>false</rpm-check-signatures>
-        <type image="iso" volid="APEX_LINUX" filesystem="squashfs"/>
+        <type image="iso" volid="APEX_LINUX" filesystem="squashfs" flags="overlay"/>
     </preferences>
 
     <repository type="rpm-md">
@@ -32,12 +32,11 @@
 
     <packages type="image">
         <package name="kernel-default"/>
-        <package name="dracut-kiwi-live"/>
-        <package name="grub2"/>
-        <package name="grub2-i386-pc"/>     
-        <package name="grub2-x86_64-efi"/>  
+        <package name="dracut-kiwi-live"/> <package name="grub2"/>
+        <package name="grub2-x86_64-efi"/>
+        <package name="grub2-i386-pc"/>
+        <package name="shim"/>
         <package name="grub2-branding-openSUSE"/>
-        <package name="shim"/>    
 
         <package name="Mesa"/>
         <package name="plasma6-desktop"/>
