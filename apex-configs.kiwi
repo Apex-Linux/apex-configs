@@ -73,6 +73,13 @@
         <package name="plasma6-nm"/>
         <package name="vim"/>
         <package name="fastfetch"/>
+
+        <package name="pipewire"/>
+        <package name="pipewire-pulse"/>
+        <package name="libpulse0"/>
+        <package name="wireplumber"/> 
+        <package name="hicolor-icon-theme"/>
+        <package name="desktop-file-utils"/>
     </packages>
 
     <config>
