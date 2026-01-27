@@ -100,6 +100,11 @@
 
     </packages>
 
+      <!-- Services -->
+    <services>
+        <service name="systemd-vconsole-setup" enable="false"/>
+    </services>
+
     <!-- USERS -->
     <users>
         <user name="root"
