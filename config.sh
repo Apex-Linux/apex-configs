@@ -5,22 +5,47 @@ set -e
 # --- Networking ---
 systemctl enable NetworkManager
 
-# --- Display Manager ---
-# Use --force to overwrite the existing display-manager-legacy symlink
+# --- Display Manager & Desktop ---
+# In 2026, sddm often needs to be forced over the legacy 'xdm' or 'display-manager' service
 systemctl enable --force sddm
 
+# Set Plasma 6 Wayland as the default session for all users
+# This prevents the 'black screen' or 'X11 fallback' on first boot
+mkdir -p /etc/sddm.conf.d
+cat > /etc/sddm.conf.d/10-wayland.conf << EOF
+[General]
+DisplayServer=wayland
+[Autologin]
+Session=plasma
+EOF
+
 # --- Branding (Apex Linux Identity) ---
+# We use a cleaner approach to overwrite the identity files
 if [ -f /etc/os-release ]; then
-    sed -i 's/openSUSE Tumbleweed/Apex Linux/g' /etc/os-release
-    sed -i 's/^NAME=.*/NAME="Apex Linux"/' /etc/os-release
-    sed -i 's/^ID=.*/ID=apexlinux/' /etc/os-release
-    # Force Zypper to NOT install recommended packages globally
-    sed -i 's/^# solver.onlyRequires.*/solver.onlyRequires = true/' /etc/zypp/zypp.conf
-    sed -i 's/^PRETTY_NAME=.*/PRETTY_NAME="Apex Linux Tumbleweed Edition"/' /etc/os-release
+    cat > /etc/os-release << EOF
+NAME="Apex Linux"
+VERSION="Kde Edition"
+ID=apexlinux
+ID_LIKE="suse opensuse"
+PRETTY_NAME="Apex Linux Kde Edition"
+ANSI_COLOR="0;34"
+CPE_NAME="cpe:/o:apexlinux:apexlinux:2026"
+HOME_URL="https://github.com/Apex-Linux/apex-configs"
+VARIANT="Plasma 6 Edition"
+VARIANT_ID=plasma
+EOF
 fi
 
 # Set the hostname
 echo "apex-linux" > /etc/hostname
+
+# --- System Tweaks ---
+# Force Zypper to stay slim
+sed -i 's/^# solver.onlyRequires.*/solver.onlyRequires = true/' /etc/zypp/zypp.conf
+
+# Rebuild the hardware database (crucial for Live ISO hardware detection)
+systemd-hwdb update
+udevadm trigger
 
 echo "Apex Linux DNA successfully initialized!"
 exit 0
