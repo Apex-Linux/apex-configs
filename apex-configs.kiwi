@@ -32,6 +32,8 @@
         <package name="openSUSE-release"/>
         <package name="systemd-presets-branding-openSUSE"/>
         <package name="systemd-default-settings-branding-openSUSE"/>
+        <package name="libstdc++6"/>
+        <package name="libgcc_s1"/>
     </packages>
 
     <packages type="image">
