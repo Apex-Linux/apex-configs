@@ -79,8 +79,4 @@
     <users>
         <user name="root" password="linux" groups="root" home="/root"/>
     </users>
-
-    <config>
-        <script name="config.sh" execute="chroot"/>
-    </config>
-</image>
+    </image>
