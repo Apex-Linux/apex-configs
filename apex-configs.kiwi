@@ -30,6 +30,8 @@
         <package name="systemd"/>
         <package name="zypper"/>
         <package name="openSUSE-release"/>
+        <package name="systemd-presets-branding-openSUSE"/>
+        <package name="systemd-default-settings-branding-openSUSE"/>
     </packages>
 
     <packages type="image">
