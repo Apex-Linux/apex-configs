@@ -55,6 +55,8 @@
         <package name="dracut"/>
         <package name="grub2"/>
         <package name="grub2-x86_64-efi"/>
+        <package name="grub2-i386-pc"/>
+        <package name="grub2-common"/>
         <package name="shim"/>
 
         <package name="patterns-kde-kde_plasma6"/>
