@@ -26,13 +26,6 @@
         </type>
     </preferences>
 
-    <repository type="rpm-md" alias="obs_internal">
-        <source path="obsrepositories:/"/>
-    </repository>
-    <repository type="rpm-md" alias="tumbleweed_oss">
-        <source path="http://download.opensuse.org/tumbleweed/repo/oss/"/>
-    </repository>
-
     <packages type="bootstrap">
         <package name="filesystem"/>
         <package name="glibc-locale-base"/>
@@ -47,7 +40,6 @@
         <package name="dialog"/>
         <package name="xorriso"/>
         <package name="lvm2"/>
-        
         <package name="cryptsetup"/>
 
         <package name="kernel-default"/>
@@ -73,7 +65,6 @@
         <package name="dbus-1"/>
         <package name="xz"/>
         <package name="haveged"/>
-
         <package name="systemd-zram-service"/>
         <package name="bluez-firmware"/>
 
@@ -83,12 +74,19 @@
         <package name="polkit-default-privs"/>
         <package name="libcap-progs"/>
 
-        <package name="patterns-kde-kde_plasma"/>
         <package name="plasma6-session"/>
-        <package name="qt6-wayland"/>
-        <package name="sddm"/>
-        <package name="sddm-branding-openSUSE"/>
+        <package name="plasma6-workspace"/>
+        <package name="kwin6"/> 
+        <package name="sddm-qt6"/>
+        <package name="sddm-greeter-qt6"/>
+        <package name="sddm-config-wayland"/>
+        <package name="sddm-kcm6"/>
+        <package name="plasma6-sddm-theme-breeze"/> 
+        
         <package name="konsole"/>
+        <package name="dolphin"/>
+        <package name="breeze6-icons"/>
+        
         <package name="NetworkManager"/>
         <package name="pipewire-alsa"/>
         <package name="podman"/>
