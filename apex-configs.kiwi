@@ -26,6 +26,13 @@
         </type>
     </preferences>
 
+    <repository type="rpm-md" alias="tumbleweed">
+        <source path="http://download.opensuse.org/tumbleweed/repo/oss/"/>
+    </repository>
+    <repository type="rpm-md" alias="tumbleweed_update">
+        <source path="http://download.opensuse.org/update/tumbleweed/"/>
+    </repository>
+
     <packages type="bootstrap">
         <package name="filesystem"/>
         <package name="glibc-locale-base"/>
@@ -75,15 +82,10 @@
         <package name="libcap-progs"/>
 
         <package name="plasma6-session"/>
-        <package name="plasma6-workspace"/>
-        <package name="kwin6"/> 
-        <package name="sddm-qt6"/>
-        <package name="sddm-greeter-qt6"/>
-        <package name="sddm-config-wayland"/>
-        <package name="sddm-kcm6"/>
-        <package name="plasma6-sddm-theme-breeze"/> 
+        <package name="plasma6-workspace"/> <package name="kwin6"/> 
         
-        <package name="konsole"/>
+        <package name="sddm-qt6"/>
+        <package name="sddm-greeter-qt6"/> <package name="sddm-kcm6"/>        <package name="konsole"/>
         <package name="dolphin"/>
         <package name="breeze6-icons"/>
         
