@@ -69,6 +69,8 @@
         <package name="podman"/>
         <package name="shadow"/>
         <package name="libcap-progs"/>
+        <package name="polkit"/>
+        <package name="polkit-default-privs"/>
 
         <package name="haveged"/>
         <package name="pipewire-alsa"/>
