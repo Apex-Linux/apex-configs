@@ -54,9 +54,17 @@ fi
 
 echo "--- [2/5] Configuring Services & Polkit ---"
 
+# --- POLKIT REPAIR FIX ---
+# 1. Create the directory that was missing in the logs
 mkdir -p /etc/polkit-1/rules.d/
 chmod 750 /etc/polkit-1/rules.d/ 
 chown polkitd:root /etc/polkit-1/rules.d/ 2>/dev/null || true
+
+# 2. FORCE REGENERATION of the rules file (Fixes the %post script error)
+if [ -x /usr/sbin/set_polkit_default_privs ]; then
+    /usr/sbin/set_polkit_default_privs
+    echo "  [FIX] Polkit default privileges regenerated."
+fi
 
 systemctl enable NetworkManager 2>/dev/null || true
 systemctl enable sddm 2>/dev/null || true
