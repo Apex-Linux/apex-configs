@@ -115,7 +115,7 @@ for bin in /usr/bin/newuidmap /usr/bin/newgidmap; do
 done
 
 # --- SOLVER UNLOCK ---
-# Critical: Allow Zypper to match the _rc1 package to the ~rc1 requirement
+# Critical: Allow Zypper to use the new repo to fix dependencies
 sed -i 's/^solver.onlyRequires.*/solver.onlyRequires = false/' /etc/zypp/zypp.conf
 
 # Set default boot target
