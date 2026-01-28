@@ -27,7 +27,7 @@ fi
 
 # --- 2. User & Security Setup ---
 
-# Create generic groups if missing
+# Create generic groups
 for group in wheel video audio users render shadow; do
     getent group "$group" >/dev/null 2>&1 || groupadd -r "$group"
 done
@@ -38,28 +38,31 @@ echo "root:linux" | chpasswd
 # Setup Live User
 if ! id "$LIVE_USER" &>/dev/null; then
     useradd -m -s /bin/bash -c "Apex Live User" -G wheel,video,audio,users,render "$LIVE_USER"
-    # Set fallback password
     echo "$LIVE_USER:$LIVE_PASS" | chpasswd
     
     # Sudoers configuration
     echo "$LIVE_USER ALL=(ALL) NOPASSWD: ALL" > "/etc/sudoers.d/$LIVE_USER"
     chmod 0440 "/etc/sudoers.d/$LIVE_USER"
-    
-    # Podman/Container mapping setup
-    touch /etc/subuid /etc/subgid
-    grep -q "^${LIVE_USER}:" /etc/subuid || echo "${LIVE_USER}:100000:65536" >> /etc/subuid
-    grep -q "^${LIVE_USER}:" /etc/subgid || echo "${LIVE_USER}:100000:65536" >> /etc/subgid
 fi
 
 # Polkit Permissions Fix
 mkdir -p /etc/polkit-1/rules.d/
 chmod 750 /etc/polkit-1/rules.d/
 chown polkitd:root /etc/polkit-1/rules.d/ 2>/dev/null || true
-
-# Regenerate openSUSE privs
 [ -x /usr/sbin/set_polkit_default_privs ] && /usr/sbin/set_polkit_default_privs
 
-# --- 3. Desktop & Display Manager ---
+# --- 3. REPO INJECTION (Crucial Fix) ---
+# Since we removed repos from .kiwi to please OBS, we must add them back
+# so the live user can actually install software.
+echo "--- Injecting Official Tumbleweed Repositories ---"
+zypper ar -f -n "openSUSE Tumbleweed OSS" http://download.opensuse.org/tumbleweed/repo/oss/ repo-oss
+zypper ar -f -n "openSUSE Tumbleweed Non-OSS" http://download.opensuse.org/tumbleweed/repo/non-oss/ repo-non-oss
+zypper ar -f -n "openSUSE Tumbleweed Update" http://download.opensuse.org/update/tumbleweed/ repo-update
+
+# Import GPG Keys automatically so the user isn't pestered
+zypper --gpg-auto-import-keys ref || true
+
+# --- 4. Desktop & Display Manager ---
 
 # Enable basic services
 systemctl enable NetworkManager sddm
@@ -87,7 +90,7 @@ Session=${SESSION_NAME}
 Relogin=false
 EOF
 
-# --- 4. Branding & Finalization ---
+# --- 5. Branding & Finalization ---
 
 # Set Hostname
 echo "$HOSTNAME" > /etc/hostname
@@ -115,13 +118,11 @@ for bin in /usr/bin/newuidmap /usr/bin/newgidmap; do
 done
 
 # --- SOLVER UNLOCK ---
-# Critical: Allow Zypper to use the new repo to fix dependencies
+# Critical: Allow Zypper to use the injected repos to resolve dependencies
 sed -i 's/^solver.onlyRequires.*/solver.onlyRequires = false/' /etc/zypp/zypp.conf
 
 # Set default boot target
 systemctl set-default graphical.target
-
-# Update Hardware Database
 [ -x /usr/bin/systemd-hwdb ] && systemd-hwdb update || true
 
 exit 0
