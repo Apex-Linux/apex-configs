@@ -54,8 +54,6 @@
         <package name="systemd"/>
         <package name="zypper"/>
         
-        <package name="libSPIRV-Tools-2025_5_rc1"/> 
-        <package name="libSPIRV-Tools-2026_1"/>     
         <package name="grub2"/>
         <package name="grub2-x86_64-efi"/>
         <package name="grub2-i386-pc"/>
