@@ -41,6 +41,7 @@
         <package name="coreutils"/>     
         <package name="shadow"/>      
         <package name="diffutils"/>
+        <package name="libpwquality1"/>
 </packages>
     <packages type="image">
         <package name="gzip"/>
