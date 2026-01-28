@@ -2,6 +2,11 @@
 # Apex Linux Phase 4: Final Hardened & Self-Auditing Configuration
 set -euo pipefail
 
+# --- CRITICAL FIX: Force Boot Drivers ---
+# This replaces the invalid XML <drivers> section.
+# It forces dracut to include overlay/squashfs so the ISO boots correctly.
+echo 'add_drivers+=" overlay squashfs loop "' > /etc/dracut.conf.d/force-drivers.conf
+
 # --- Safety Check: Ensure Root ---
 if [ "$(id -u)" -ne 0 ]; then
     echo "ERROR: Apex DNA initialization must be run as root!" >&2
@@ -13,7 +18,6 @@ LIVE_PASS=""
 
 echo "--- [1/5] Initializing User & Group Security ---"
 
-# Ensure the shadow group exists for unix_chkpwd (fixes log warnings)
 getent group shadow >/dev/null || groupadd -r shadow
 
 ensure_group() {
@@ -29,52 +33,40 @@ for g in wheel video audio users render; do
     ensure_group "$g"
 done
 
-# --- Fix root account ---
 echo "root:linux" | chpasswd
-echo "  [OK] Root password set to 'linux'."
 
 if ! id "$LIVE_USER" &>/dev/null; then
     useradd -m -s /bin/bash -G wheel,video,audio,users,render "$LIVE_USER"
     [ -n "$LIVE_PASS" ] && echo "$LIVE_USER:$LIVE_PASS" | chpasswd || passwd -l "$LIVE_USER"
     
-    # Secure Sudoers (Mode 0440 is mandatory for sudo to function)
     cat > /etc/sudoers.d/apex <<'EOF'
-# WARNING: This configuration is for Apex Live Media ONLY.
-# Passwordless sudo is enabled for the live user experience.
 apex ALL=(ALL) NOPASSWD: ALL
 EOF
     chmod 0440 /etc/sudoers.d/apex
-    echo "  [OK] Live user '$LIVE_USER' initialized with 0440 sudoers."
-
-    # Container Support: Idempotent subuid/subgid mapping for Podman
+    
+    # Container Support
     touch /etc/subuid /etc/subgid
     chmod 0644 /etc/subuid /etc/subgid
     grep -q "^${LIVE_USER}:" /etc/subuid || echo "${LIVE_USER}:100000:65536" >> /etc/subuid
     grep -q "^${LIVE_USER}:" /etc/subgid || echo "${LIVE_USER}:100000:65536" >> /etc/subgid
-    echo "  [OK] Rootless container mappings applied."
 else
     echo "  [SKIP] User '$LIVE_USER' already exists."
 fi
 
 echo "--- [2/5] Configuring Services & Polkit ---"
 
-# Fix Polkit directory error seen in build logs
 mkdir -p /etc/polkit-1/rules.d/
-# OPTIMIZED: 750 is slightly safer than 700 for service readability
 chmod 750 /etc/polkit-1/rules.d/ 
 chown polkitd:root /etc/polkit-1/rules.d/ 2>/dev/null || true
-echo "  [OK] Polkit directory structure pre-initialized."
 
 systemctl enable NetworkManager 2>/dev/null || true
 systemctl enable sddm 2>/dev/null || true
 
-# Bulletproof Unit Path Check
 for possible in /usr/lib/systemd/system/sddm.service /lib/systemd/system/sddm.service; do
   if [ -f "$possible" ]; then
     mkdir -p /etc/systemd/system/graphical.target.wants
     ln -sf "$possible" /etc/systemd/system/display-manager.service
     ln -sf "$possible" /etc/systemd/system/graphical.target.wants/sddm.service
-    echo "  [OK] Manual SDDM symlinks created from $possible"
     break
   fi
 done
@@ -88,7 +80,6 @@ find_session() {
     [ -n "$candidate" ] && basename "$candidate" || echo "plasmawayland.desktop"
 }
 SESSION="$(find_session)"
-echo "  [INFO] Target Session: $SESSION"
 
 cat > /etc/sddm.conf.d/10-wayland.conf << EOF
 [General]
@@ -112,7 +103,6 @@ VARIANT="KDE Plasma 6"
 HOME_URL="https://github.com/Apex-Linux"
 EOF
 echo "apex-linux" > /etc/hostname
-echo "  [OK] Branding and hostname applied."
 
 echo "--- [5/5] Final Hardware & System Tweaks ---"
 for bin in /usr/bin/newuidmap /usr/bin/newgidmap; do
@@ -120,10 +110,8 @@ for bin in /usr/bin/newuidmap /usr/bin/newgidmap; do
         chown root:root "$bin"
         if command -v setcap >/dev/null 2>&1; then
             [[ "$bin" == *newuidmap ]] && setcap cap_setuid+ep "$bin" || setcap cap_setgid+ep "$bin"
-            echo "  [CAPS] Set capabilities for $(basename "$bin")"
         else
             chmod 4755 "$bin"
-            echo "  [SUID] Set SUID bit for $(basename "$bin")"
         fi
     fi
 done
@@ -131,7 +119,6 @@ done
 systemctl set-default graphical.target
 [ -x /usr/bin/systemd-hwdb ] && systemd-hwdb update || true
 
-# Safe Zypper optimization
 ZYPP_CONF="/etc/zypp/zypp.conf"
 if [ -f "$ZYPP_CONF" ]; then
     sed -i 's/^# solver.onlyRequires.*/solver.onlyRequires = true/' "$ZYPP_CONF"
