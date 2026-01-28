@@ -2,15 +2,14 @@
 # Apex Linux Phase 4: Final Hardened & Self-Auditing Configuration
 set -euo pipefail
 
-# --- CRITICAL BOOT FIX: THE NUCLEAR OPTION ---
+# --- CRITICAL BOOT FIX ---
 # 1. FORCE drivers needed for the Live ISO (Overlay, SquashFS).
-# Verified: Dracut needs these to mount the live filesystem.
 echo 'add_drivers+=" overlay squashfs loop "' > /etc/dracut.conf.d/force-drivers.conf
 
-# 2. BAN drivers causing the "fsconfig" crash.
-# Verified: "omit_dracutmodules" is the correct syntax to prevent Dracut 
-# from even trying to load crypto/LVM code.
-echo 'omit_dracutmodules+=" crypt lvm dm "' > /etc/dracut.conf.d/omit-crypto.conf
+# 2. BAN ONLY THE PROBLEM DRIVERS
+# ERROR FIX: We MUST NOT ban 'dm' (Device Mapper) because kiwi-live needs it.
+# We ONLY ban 'crypt' and 'lvm' to stop the boot crash.
+echo 'omit_dracutmodules+=" crypt lvm "' > /etc/dracut.conf.d/omit-crypto.conf
 
 # --- Safety Check: Ensure Root ---
 if [ "$(id -u)" -ne 0 ]; then
@@ -67,7 +66,7 @@ mkdir -p /etc/polkit-1/rules.d/
 chmod 750 /etc/polkit-1/rules.d/ 
 chown polkitd:root /etc/polkit-1/rules.d/ 2>/dev/null || true
 
-# Force regeneration of rules (Fixes the %post log error)
+# Force regeneration of rules
 if [ -x /usr/sbin/set_polkit_default_privs ]; then
     /usr/sbin/set_polkit_default_privs
 fi
@@ -76,7 +75,7 @@ fi
 systemctl enable NetworkManager 2>/dev/null || true
 systemctl enable sddm 2>/dev/null || true
 
-# Enable zRAM for better performance (Prevents freezing)
+# Enable zRAM for better performance
 if systemctl list-unit-files | grep -q zramswap.service; then
     systemctl enable zramswap
 fi
