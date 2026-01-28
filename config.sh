@@ -55,12 +55,7 @@ if ! id "$LIVE_USER" &>/dev/null; then
     chmod 0440 "/etc/sudoers.d/$LIVE_USER"
 fi
 
-# --- 4. REPO CONFIGURATION ---
-# FIX: Removed Section 4 (Repo Injection) because OBS has no internet.
-# Repositories must be defined in your .kiwi file instead.
-
 # --- 5. Desktop Finalization ---
-# FIX: Use systemctl instead of manual ln -sf to avoid "Failed to enable unit".
 systemctl enable NetworkManager
 systemctl enable sddm
 
