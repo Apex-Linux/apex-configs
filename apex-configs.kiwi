@@ -52,6 +52,8 @@
     </packages>
 
     <packages type="image">
+        <package name="plasma6-desktop"/>
+        <package name="wayland-utils"/>
         <package name="branding-upstream"/>      
         <package name="NetworkManager-branding-upstream"/>
         <package name="gio-branding-upstream"/>  
