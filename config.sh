@@ -18,7 +18,7 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 # Enable Standard Live Drivers
-# We add dm-mod to ensure dmsquash works perfectly
+# dm-mod added to ensure dmsquash works perfectly
 echo 'add_drivers+=" overlay squashfs loop dm-mod "' > /etc/dracut.conf.d/10-apex-live.conf
 
 # Enable zRAM
@@ -114,6 +114,10 @@ for bin in /usr/bin/newuidmap /usr/bin/newgidmap; do
         fi
     fi
 done
+
+# --- BLOAT PROTECTION (RESTORED) ---
+# Forces Zypper to ignore "Recommended" packages to keep the system minimal.
+sed -i 's/^# solver.onlyRequires.*/solver.onlyRequires = true/' /etc/zypp/zypp.conf
 
 # Set default boot target
 systemctl set-default graphical.target
