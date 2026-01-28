@@ -17,14 +17,14 @@
         </type>
     </preferences>
 
+    <repository type="rpm-md">
+        <source path="obs:/openSUSE:Factory/standard"/>
+    </repository>
+
     <users>
         <user name="root" passwordhash="$6$rounds=4096$ApexLinux$7iH6D.Wq5v6O/M.yX1gG6O5Bv0Fv9f6W1v7O8p9G7Q8" groups="root" home="/root"/>
         <user name="apex" passwordhash="$6$rounds=4096$ApexUser$O8Z5rGv9Hj5.m9eQ7wX1V6u0F4z3Y2x8P1T" groups="users,wheel,video,audio" home="/home/apex"/>
     </users>
-
-    <repository type="rpm-md">
-        <source path="obs:/openSUSE:Factory/standard"/>
-    </repository>
 
     <packages type="bootstrap">
         <package name="filesystem"/>
@@ -39,29 +39,23 @@
     <packages type="image">
         <package name="patterns-openSUSE-base"/>
         <package name="patterns-openSUSE-enhanced_base"/>
-        
         <package name="dracut-kiwi-live"/>
-
         <package name="kernel-default"/>
         <package name="kernel-firmware-all"/>
         <package name="grub2"/>
         <package name="grub2-x86_64-efi"/>
         <package name="shim"/>
-        
         <package name="patterns-kde-kde_plasma6"/>
         <package name="sddm"/>
         <package name="konsole"/>
         <package name="dolphin"/>
         <package name="plasma6-nm"/>
         <package name="NetworkManager"/>
-        
         <package name="Mesa-dri"/>
-        
         <package name="sudo"/>
         <package name="shadow"/>
         <package name="vim"/>
         <package name="fastfetch"/>
-        
         <package name="kiwi-systemdeps-iso-media"/>
     </packages>
 </image>
