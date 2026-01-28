@@ -4,9 +4,12 @@ set -euo pipefail
 
 # --- CRITICAL BOOT FIX: THE NUCLEAR OPTION ---
 # 1. FORCE drivers needed for the Live ISO (Overlay, SquashFS).
+# Verified: Dracut needs these to mount the live filesystem.
 echo 'add_drivers+=" overlay squashfs loop "' > /etc/dracut.conf.d/force-drivers.conf
 
-# 2. BAN drivers causing the crash.
+# 2. BAN drivers causing the "fsconfig" crash.
+# Verified: "omit_dracutmodules" is the correct syntax to prevent Dracut 
+# from even trying to load crypto/LVM code.
 echo 'omit_dracutmodules+=" crypt lvm dm "' > /etc/dracut.conf.d/omit-crypto.conf
 
 # --- Safety Check: Ensure Root ---
@@ -40,7 +43,7 @@ echo "root:linux" | chpasswd
 
 if ! id "$LIVE_USER" &>/dev/null; then
     useradd -m -s /bin/bash -G wheel,video,audio,users,render "$LIVE_USER"
-    # CRITICAL CHANGE: Not locking the account! Set a fallback password.
+    # CRITICAL CHANGE: Do not lock the account! Set a fallback password.
     echo "$LIVE_USER:$LIVE_PASS" | chpasswd
     
     cat > /etc/sudoers.d/apex <<'EOF'
@@ -64,20 +67,18 @@ mkdir -p /etc/polkit-1/rules.d/
 chmod 750 /etc/polkit-1/rules.d/ 
 chown polkitd:root /etc/polkit-1/rules.d/ 2>/dev/null || true
 
-# Force regeneration of rules (Fixes the log error we saw earlier)
+# Force regeneration of rules (Fixes the %post log error)
 if [ -x /usr/sbin/set_polkit_default_privs ]; then
     /usr/sbin/set_polkit_default_privs
-    echo "  [FIX] Polkit default privileges regenerated."
 fi
 
 # Enable critical services
 systemctl enable NetworkManager 2>/dev/null || true
 systemctl enable sddm 2>/dev/null || true
 
-# Enable zRAM for better performance in Live Mode (Prevents freezing)
+# Enable zRAM for better performance (Prevents freezing)
 if systemctl list-unit-files | grep -q zramswap.service; then
     systemctl enable zramswap
-    echo "  [PERF] zRAM swap enabled."
 fi
 
 for possible in /usr/lib/systemd/system/sddm.service /lib/systemd/system/sddm.service; do
