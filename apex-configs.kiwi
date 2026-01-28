@@ -34,6 +34,7 @@
         <package name="filesystem"/>
         <package name="glibc-locale-base"/>
         <package name="bash"/>
+        <package name="bash-sh"/>
         <package name="openSUSE-release"/>
         <package name="aaa_base"/>        
         <package name="ncurses-utils"/>
