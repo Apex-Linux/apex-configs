@@ -6,12 +6,12 @@
         <specification>Apex Linux – Tumbleweed-based Distribution</specification>
     </description>
 
-    <!-- 1. Profiles wrapper (mandatory place for <users> since schema 8.3) -->
+    <!-- 1. single profile -->
     <profiles>
         <profile name="default" description="Live ISO image"/>
     </profiles>
 
-    <!-- 2. All preferences tied to the same profile -->
+    <!-- 2. preferences tied to that profile -->
     <preferences arch="x86_64" profiles="default">
         <version>1.0.4</version>
         <packagemanager>zypper</packagemanager>
@@ -29,7 +29,7 @@
         </type>
     </preferences>
 
-    <!-- 3. Users must be inside a profile -->
+    <!-- 3. users inside the same profile -->
     <users profiles="default">
         <user name="root"
               password="$6$rounds=4096$ApexLinux$7iH6D.Wq5v6O/M.yX1gG6O5Bv0Fv9f6W1v7O8p9G7Q8"
@@ -39,12 +39,12 @@
               groups="users,wheel,video,audio"/>
     </users>
 
-    <!-- 4. Repository: let OBS substitute the correct path -->
+    <!-- 4. repository -->
     <repository type="rpm-md">
         <source path="obsrepositories:/"/>
     </repository>
 
-    <!-- 5. Bootstrap packages -->
+    <!-- 5. bootstrap packages -->
     <packages type="bootstrap" profiles="default">
         <package name="filesystem"/>
         <package name="glibc-locale-base"/>
@@ -53,7 +53,7 @@
         <package name="aaa_base"/>
     </packages>
 
-    <!-- 6. Image packages -->
+    <!-- 6. image packages -->
     <packages type="image" profiles="default">
         <package name="zypper"/>
         <package name="kernel-default"/>
