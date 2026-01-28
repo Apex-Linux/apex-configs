@@ -25,7 +25,22 @@ if systemctl list-unit-files | grep -q zramswap.service; then
     systemctl enable zramswap
 fi
 
-# --- 2. User & Security Setup ---
+# --- 2. PERMISSIONS & SECURITY FIX (Critical) ---
+# Fixes "wrong owner/group" errors seen in build logs for unix_chkpwd/fusermount
+if [ -x /usr/bin/chkstat ]; then
+    echo "Running chkstat to enforce system permissions..."
+    chkstat --system
+fi
+
+# Polkit Permissions Fix
+mkdir -p /etc/polkit-1/rules.d/
+chmod 750 /etc/polkit-1/rules.d/
+chown polkitd:root /etc/polkit-1/rules.d/ 2>/dev/null || true
+
+# Regenerate polkit privs (Fixes scriptlet failure)
+[ -x /usr/sbin/set_polkit_default_privs ] && /usr/sbin/set_polkit_default_privs
+
+# --- 3. User Setup ---
 
 # Create generic groups
 for group in wheel video audio users render shadow; do
@@ -40,41 +55,30 @@ if ! id "$LIVE_USER" &>/dev/null; then
     useradd -m -s /bin/bash -c "Apex Live User" -G wheel,video,audio,users,render "$LIVE_USER"
     echo "$LIVE_USER:$LIVE_PASS" | chpasswd
     
-    # Sudoers configuration
     echo "$LIVE_USER ALL=(ALL) NOPASSWD: ALL" > "/etc/sudoers.d/$LIVE_USER"
     chmod 0440 "/etc/sudoers.d/$LIVE_USER"
 fi
 
-# Polkit Permissions Fix
-mkdir -p /etc/polkit-1/rules.d/
-chmod 750 /etc/polkit-1/rules.d/
-chown polkitd:root /etc/polkit-1/rules.d/ 2>/dev/null || true
-[ -x /usr/sbin/set_polkit_default_privs ] && /usr/sbin/set_polkit_default_privs
-
-# --- 3. REPO INJECTION (Crucial Fix) ---
-# Since we removed repos from .kiwi to please OBS, we must add them back
-# so the live user can actually install software.
+# --- 4. REPO INJECTION (Runtime Fix) ---
 echo "--- Injecting Official Tumbleweed Repositories ---"
 zypper ar -f -n "openSUSE Tumbleweed OSS" http://download.opensuse.org/tumbleweed/repo/oss/ repo-oss
 zypper ar -f -n "openSUSE Tumbleweed Non-OSS" http://download.opensuse.org/tumbleweed/repo/non-oss/ repo-non-oss
 zypper ar -f -n "openSUSE Tumbleweed Update" http://download.opensuse.org/update/tumbleweed/ repo-update
 
-# Import GPG Keys automatically so the user isn't pestered
+# Import GPG Keys
 zypper --gpg-auto-import-keys ref || true
 
-# --- 4. Desktop & Display Manager ---
+# --- 5. Desktop & Finalization ---
 
-# Enable basic services
 systemctl enable NetworkManager sddm
 
-# Fix SDDM Service Symlinks
 if [ -f /usr/lib/systemd/system/sddm.service ]; then
     mkdir -p /etc/systemd/system/graphical.target.wants
     ln -sf /usr/lib/systemd/system/sddm.service /etc/systemd/system/display-manager.service
     ln -sf /usr/lib/systemd/system/sddm.service /etc/systemd/system/graphical.target.wants/sddm.service
 fi
 
-# Configure SDDM Autologin (Wayland)
+# Manually configure SDDM for Wayland
 mkdir -p /etc/sddm.conf.d
 SESSION_FILE=$(find /usr/share/wayland-sessions -name "*plasma*.desktop" | head -n1 || echo "plasma.desktop")
 SESSION_NAME=$(basename "$SESSION_FILE")
@@ -90,12 +94,8 @@ Session=${SESSION_NAME}
 Relogin=false
 EOF
 
-# --- 5. Branding & Finalization ---
-
-# Set Hostname
 echo "$HOSTNAME" > /etc/hostname
 
-# Set OS Release Info
 cat > /etc/os-release << EOF
 NAME="Apex Linux"
 VERSION="2026 (Plasma 6)"
@@ -106,7 +106,7 @@ VARIANT="Live"
 HOME_URL="https://github.com/Apex-Linux"
 EOF
 
-# Fix SetUID permissions
+# Fix capabilities for podman (rootless containers)
 for bin in /usr/bin/newuidmap /usr/bin/newgidmap; do
     if [ -x "$bin" ]; then
         if command -v setcap >/dev/null 2>&1; then
@@ -118,10 +118,8 @@ for bin in /usr/bin/newuidmap /usr/bin/newgidmap; do
 done
 
 # --- SOLVER UNLOCK ---
-# Critical: Allow Zypper to use the injected repos to resolve dependencies
 sed -i 's/^solver.onlyRequires.*/solver.onlyRequires = false/' /etc/zypp/zypp.conf
 
-# Set default boot target
 systemctl set-default graphical.target
 [ -x /usr/bin/systemd-hwdb ] && systemd-hwdb update || true
 
