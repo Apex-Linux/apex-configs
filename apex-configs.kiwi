@@ -7,7 +7,7 @@
     </description>
 
     <preferences arch="x86_64">
-        <version>1.0.4</version>
+        <version>1.0.0</version>
         <packagemanager>zypper</packagemanager>
         <rpm-check-signatures>false</rpm-check-signatures>
         <locale>en_US</locale>
@@ -52,6 +52,8 @@
         <package name="systemd"/>
         <package name="zypper"/>
         
+        <package name="spirv-tools"/>
+
         <package name="grub2"/>
         <package name="grub2-x86_64-efi"/>
         <package name="grub2-i386-pc"/>
