@@ -22,7 +22,7 @@
               filesystem="squashfs"
               flags="overlay"
               firmware="uefi"
-              kernelcmdline="rd.luks=0 rd.lvm=0 rd.md=0 rd.dm=0">
+              kernelcmdline="rd.luks=0 rd.lvm=0 rd.md=0">
             <bootloader name="grub2" timeout="10"/>
         </type>
     </preferences>
@@ -72,8 +72,9 @@
         <package name="xz"/>
         <package name="haveged"/>
 
-        <package name="systemd-zram-service"/> 
-        <package name="bluez-firmware"/>       
+        <package name="systemd-zram-service"/>
+        <package name="bluez-firmware"/>
+
         <package name="sudo"/>
         <package name="shadow"/>
         <package name="polkit"/>
