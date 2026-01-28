@@ -72,7 +72,10 @@
         <package name="xz"/>
         <package name="haveged"/>
 
-        <package name="systemd-zram-service"/> <package name="NetworkManager-wifi"/>  <package name="bluez-firmware"/>       <package name="sudo"/>
+        <package name="systemd-zram-service"/> 
+        <package name="NetworkManager-wifi"/>  
+        <package name="bluez-firmware"/>       
+        <package name="sudo"/>
         <package name="shadow"/>
         <package name="polkit"/>
         <package name="polkit-default-privs"/>
