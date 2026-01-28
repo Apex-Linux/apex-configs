@@ -5,7 +5,7 @@
         <contact>mdzunaid384@gmail.com</contact>
         <specification>Apex Linux – Tumbleweed-based Distribution</specification>
     </description>
-
+    
     <preferences arch="x86_64">
         <version>1.0.4</version>
         <packagemanager>zypper</packagemanager>
@@ -54,8 +54,6 @@
         <package name="shadow"/>
         <package name="libcap-progs"/>
         
-        <package name="haveged"/>
-        <package name="pipewire-alsa"/>
-        <package name="Mesa-dri"/> <package name="kiwi-systemdeps-iso-media"/>
+        <package name="kiwi-systemdeps-iso-media"/>
     </packages>
 </image>
