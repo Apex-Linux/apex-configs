@@ -50,6 +50,9 @@
     </packages>
 
     <packages type="image">
+        <package name="sysvinit-tools"/>
+        <package name="xdg-desktop-portal-kde"/>
+        <package name="wayland-utils"/>
         <package name="fuse3"/>
         <package name="update-alternatives"/>
         <package name="chrony-pool-openSUSE"/>
