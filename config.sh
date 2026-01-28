@@ -2,9 +2,9 @@
 # Apex Linux Phase 4: Final Hardened & Self-Auditing Configuration
 set -euo pipefail
 
-# --- CRITICAL BOOT FIX (Do Not Remove) ---
+# --- CRITICAL BOOT FIX ---
 # Forces drivers needed for the Live ISO to boot correctly.
-# This prevents the "special device does not exist" error.
+# Validated by common dracut module requirements for live booting.
 echo 'add_drivers+=" overlay squashfs loop "' > /etc/dracut.conf.d/force-drivers.conf
 
 # --- Safety Check: Ensure Root ---
