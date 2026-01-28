@@ -16,6 +16,9 @@
 
         <type image="iso"
               volid="APEX_LINUX"
+              publisher="Apex Linux Team"
+              application_id="Apex Linux Live"
+              mediacheck="true"
               filesystem="squashfs"
               flags="overlay"
               firmware="uefi"
@@ -43,7 +46,6 @@
         <package name="dialog"/>
         <package name="xorriso"/>
         <package name="lvm2"/>
-
         <package name="kernel-default"/>
         <package name="kernel-firmware-all"/>
         <package name="dracut"/>
@@ -51,13 +53,11 @@
         <package name="udev"/>
         <package name="systemd"/>
         <package name="zypper"/>
-
         <package name="grub2"/>
         <package name="grub2-x86_64-efi"/>
         <package name="grub2-i386-pc"/>
         <package name="grub2-common"/>
         <package name="shim"/>
-
         <package name="squashfs"/>
         <package name="btrfsprogs"/>
         <package name="iproute2"/>
@@ -69,7 +69,7 @@
         <package name="xz"/>
         <package name="haveged"/>
 
-        <package name="sudo"/>
+        <package name="systemd-zram-service"/> <package name="NetworkManager-wifi"/>  <package name="bluez-firmware"/>       <package name="sudo"/>
         <package name="shadow"/>
         <package name="polkit"/>
         <package name="polkit-default-privs"/>
