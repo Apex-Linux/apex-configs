@@ -6,7 +6,7 @@
     <specification>Apex Linux – Tumbleweed-based Distribution</specification>
   </description>
 
-  <!-- PROPER STRUCTURE: users MUST be INSIDE profile -->
+  <!-- ✅ USERS MUST BE INSIDE PROFILE (schema 8.3+ requirement) -->
   <profiles>
     <profile name="default" description="Live ISO image">
       <users>
@@ -30,17 +30,14 @@
     <timezone>UTC</timezone>
     <hwclock>utc</hwclock>
 
+    <!-- ✅ CORRECT BOOTLOADER SYNTAX FOR SCHEMA 8.3+ -->
     <type image="iso"
           volid="APEX_LINUX"
           filesystem="squashfs"
           flags="overlay"
-          firmware="uefi"
-          bootloader="grub2"
-          hybridpersistent_filesystem="ext4"
-          hybridpersistent="true">
-      <bootloader name="grub2" timeout="10"/>
-      <!-- Required for overlay/live ISO -->
-      <systemdisk/>
+          firmware="uefi">
+      <bootloader timeout="10"/>  <!-- NO 'name' attribute! -->
+      <systemdisk/>               <!-- REQUIRED for overlay -->
     </type>
   </preferences>
 
@@ -65,6 +62,10 @@
     <package name="grub2-x86_64-efi"/>
     <package name="shim"/>
 
+    <!-- ⚠️ PLASMA 6 WARNING: May not exist yet in Tumbleweed -->
+    <!-- Use Plasma 5 fallback if build fails: -->
+    <!-- <package name="patterns-kde-kde_plasma"/> -->
+    <!-- <package name="plasma5-session"/> -->
     <package name="patterns-kde-kde_plasma6"/>
     <package name="plasma6-session"/>
     <package name="qt6-wayland"/>
@@ -77,12 +78,9 @@
     <package name="podman"/>
     <package name="shadow"/>
     <package name="libcap-progs"/>
-
     <package name="haveged"/>
     <package name="pipewire-alsa"/>
     <package name="Mesa-dri"/>
-    
-    <!-- Critical for overlay/live functionality -->
-    <package name="overlayfs"/>
+    <package name="overlayfs"/>  <!-- REQUIRED for live overlay -->
   </packages>
 </image>
