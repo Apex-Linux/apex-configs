@@ -12,7 +12,7 @@
         <rpm-check-signatures>false</rpm-check-signatures>
         <locale>en_US</locale>
         <timezone>UTC</timezone>
-        <type image="iso" volid="APEX_LINUX" filesystem="squashfs" flags="overlay" firmware="uefi" kernelcmdline="quiet splash rd.live.image">
+        <type image="iso" volid="APEX_LINUX" filesystem="squashfs" flags="overlay" firmware="uefi" kernelcmdline="quiet splash rd.live.image rd.live.overlay.persistent=0">
             <bootloader name="grub2" timeout="10"/>
         </type>
     </preferences>
@@ -40,11 +40,13 @@
         <package name="patterns-openSUSE-base"/>
         <package name="patterns-openSUSE-enhanced_base"/>
         
-        <package name="patterns-openSUSE-live"/>
-        
+        <package name="dracut-kiwi-live"/>
+        <package name="live-add-yast-settings"/>
+        <package name="gfxboot-branding-openSUSE"/>
+        <package name="grub2-branding-openSUSE"/>
+
         <package name="kernel-default"/>
         <package name="kernel-firmware-all"/>
-        <package name="dracut-kiwi-live"/>
         <package name="grub2"/>
         <package name="grub2-x86_64-efi"/>
         <package name="shim"/>
@@ -57,15 +59,12 @@
         <package name="NetworkManager"/>
         
         <package name="Mesa-dri"/>
-        <package name="Mesa-libGL1"/>
         <package name="xf86-video-vesa"/>
-        
         <package name="sudo"/>
         <package name="shadow"/>
         <package name="vim"/>
         <package name="fastfetch"/>
         <package name="polkit-default-privs"/>
-        <package name="hicolor-icon-theme"/>
         
         <package name="kiwi-systemdeps-iso-media"/>
     </packages>
