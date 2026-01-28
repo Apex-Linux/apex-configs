@@ -45,6 +45,7 @@
     </packages>
 
     <packages type="image">
+        <package name="chrony-pool-openSUSE"/>
         <package name="shadow-pw-mgmt"/>           
         <package name="openSUSE-build-key"/>      
         <package name="branding-openSUSE"/>       
