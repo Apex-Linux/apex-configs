@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<image schemaversion="8.3" name="Apex-Linux">
+<image schemaversion="7.4" name="Apex-Linux">
     <description type="system">
         <author>ackerman &amp; frost</author>
         <contact>mdzunaid384@gmail.com</contact>
         <specification>Apex Linux – Tumbleweed-based Distribution</specification>
     </description>
-    
+
     <preferences arch="x86_64">
         <version>1.0.4</version>
         <packagemanager>zypper</packagemanager>
@@ -54,6 +54,8 @@
         <package name="shadow"/>
         <package name="libcap-progs"/>
         
-        <package name="kiwi-systemdeps-iso-media"/>
+        <package name="haveged"/>
+        <package name="pipewire-alsa"/>
+        <package name="Mesa-dri"/>
     </packages>
 </image>
