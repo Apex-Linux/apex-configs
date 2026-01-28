@@ -43,6 +43,7 @@
         <package name="parted"/>
         <package name="dolly"/>
         <package name="dialog"/>
+        <package name="cryptsetup"/>
         <package name="xorriso"/>
         <package name="lvm2"/> 
         <package name="kernel-default"/>
