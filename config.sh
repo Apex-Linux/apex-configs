@@ -2,9 +2,9 @@
 # Apex Linux Phase 4: Final Hardened & Self-Auditing Configuration
 set -euo pipefail
 
-# --- CRITICAL FIX: Force Boot Drivers ---
-# This replaces the invalid XML <drivers> section.
-# It forces dracut to include overlay/squashfs so the ISO boots correctly.
+# --- CRITICAL BOOT FIX ---
+# Since we removed <drivers> from the XML to fix the build error,
+# we MUST force the drivers here to prevent the "special device does not exist" boot error.
 echo 'add_drivers+=" overlay squashfs loop "' > /etc/dracut.conf.d/force-drivers.conf
 
 # --- Safety Check: Ensure Root ---
@@ -18,6 +18,7 @@ LIVE_PASS=""
 
 echo "--- [1/5] Initializing User & Group Security ---"
 
+# Ensure the shadow group exists
 getent group shadow >/dev/null || groupadd -r shadow
 
 ensure_group() {
@@ -33,17 +34,21 @@ for g in wheel video audio users render; do
     ensure_group "$g"
 done
 
+# --- Fix root account ---
 echo "root:linux" | chpasswd
+echo "  [OK] Root password set to 'linux'."
 
 if ! id "$LIVE_USER" &>/dev/null; then
     useradd -m -s /bin/bash -G wheel,video,audio,users,render "$LIVE_USER"
     [ -n "$LIVE_PASS" ] && echo "$LIVE_USER:$LIVE_PASS" | chpasswd || passwd -l "$LIVE_USER"
     
+    # Secure Sudoers
     cat > /etc/sudoers.d/apex <<'EOF'
 apex ALL=(ALL) NOPASSWD: ALL
 EOF
     chmod 0440 /etc/sudoers.d/apex
-    
+    echo "  [OK] Live user '$LIVE_USER' initialized."
+
     # Container Support
     touch /etc/subuid /etc/subgid
     chmod 0644 /etc/subuid /etc/subgid
@@ -62,6 +67,7 @@ chown polkitd:root /etc/polkit-1/rules.d/ 2>/dev/null || true
 systemctl enable NetworkManager 2>/dev/null || true
 systemctl enable sddm 2>/dev/null || true
 
+# Bulletproof Unit Path Check
 for possible in /usr/lib/systemd/system/sddm.service /lib/systemd/system/sddm.service; do
   if [ -f "$possible" ]; then
     mkdir -p /etc/systemd/system/graphical.target.wants
@@ -119,6 +125,7 @@ done
 systemctl set-default graphical.target
 [ -x /usr/bin/systemd-hwdb ] && systemd-hwdb update || true
 
+# Safe Zypper optimization
 ZYPP_CONF="/etc/zypp/zypp.conf"
 if [ -f "$ZYPP_CONF" ]; then
     sed -i 's/^# solver.onlyRequires.*/solver.onlyRequires = true/' "$ZYPP_CONF"
