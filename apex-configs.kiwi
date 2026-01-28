@@ -36,22 +36,29 @@
     </packages>
 
     <packages type="image">
+        <package name="iproute2"/>       
+        <package name="squashfs"/>       
+        <package name="curl"/>     
+        <package name="udev"/> 
         <package name="tar"/>
         <package name="openssh-clients"/>
         <package name="nvme-cli"/>
+        <package name="lvm2"/>           
+        <package name="btrfsprogs"/>     
+        <package name="dbus-1"/>         
         <package name="xz"/>
         
         <package name="zypper"/>
         <package name="kernel-default"/>
         <package name="kernel-firmware-all"/>
         <package name="dracut-kiwi-live"/>
+        <package name="dracut"/>
         <package name="grub2"/>
         <package name="grub2-x86_64-efi"/>
         <package name="shim"/>
 
-        <package name="patterns-kde-kde_plasma"/>
+        <package name="patterns-kde-kde_plasma6"/>
         <package name="plasma6-session"/>
-        <package name="plasma6-session-x11"/>
         <package name="qt6-wayland"/>
         <package name="sddm"/>
         <package name="sddm-branding-openSUSE"/>
