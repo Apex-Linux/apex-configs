@@ -7,7 +7,7 @@
     </description>
 
     <preferences arch="x86_64">
-        <version>1.0.0</version>
+        <version>1.0.4</version>
         <packagemanager>zypper</packagemanager>
         <rpm-check-signatures>false</rpm-check-signatures>
         <locale>en_US</locale>
@@ -39,6 +39,13 @@
     </packages>
 
     <packages type="image">
+        <package name="gzip"/>
+        <package name="libudev1"/>
+        <package name="libcurl4"/>
+        <package name="glib2"/>
+        <package name="krb5"/>
+        <package name="shadow"/>
+
         <package name="parted"/>
         <package name="dolly"/>
         <package name="dialog"/>
@@ -73,7 +80,6 @@
         <package name="bluez-firmware"/>
 
         <package name="sudo"/>
-        <package name="shadow"/>
         <package name="polkit"/>
         <package name="polkit-default-privs"/>
         <package name="libcap-progs"/>
@@ -88,7 +94,9 @@
         
         <package name="konsole"/>
         <package name="dolphin"/>
-        <package name="kf6-breeze-icons"/> <package name="NetworkManager"/>
+        <package name="kf6-breeze-icons"/> 
+        <package name="NetworkManager"/>
+        <package name="pipewire"/>
         <package name="pipewire-alsa"/>
         <package name="podman"/>
     </packages>
