@@ -10,35 +10,38 @@ LIVE_PASS="live"
 HOSTNAME="apex-linux"
 
 # --- 1. System & Boot Configuration ---
-
 if [ "$(id -u)" -ne 0 ]; then
     echo "Error: This script must be run as root." >&2
     exit 1
 fi
 
+# Ensure dracut is configured for the live system
 echo 'add_drivers+=" overlay squashfs loop dm-mod "' > /etc/dracut.conf.d/10-apex-live.conf
 
+# Enable zram if present
 if systemctl list-unit-files | grep -q zramswap.service; then
     systemctl enable zramswap
 fi
 
-# --- 2. PERMISSIONS REPAIR (The Fix for Log Warnings) ---
-# This fixes "wrong owner/group" errors for unix_chkpwd, fusermount, etc.
+# --- 2. PERMISSIONS & POLKIT REPAIR ---
+# FIX: Create Polkit directory early to prevent scriptlet failure
+mkdir -p /etc/polkit-1/rules.d/
+chmod 750 /etc/polkit-1/rules.d/
+chown polkitd:root /etc/polkit-1/rules.d/ 2>/dev/null || true
+
+# Fix "wrong owner/group" warnings for system binaries
 if [ -x /usr/bin/chkstat ]; then
     echo "Running chkstat to fix system permissions..."
     chkstat --system
 fi
 
-# Ensure Polkit dir exists and has correct permissions
-mkdir -p /etc/polkit-1/rules.d/
-chmod 750 /etc/polkit-1/rules.d/
-chown polkitd:root /etc/polkit-1/rules.d/ 2>/dev/null || true
-
 # Regenerate Polkit privileges
-[ -x /usr/sbin/set_polkit_default_privs ] && /usr/sbin/set_polkit_default_privs
+if [ -x /usr/sbin/set_polkit_default_privs ]; then
+    /usr/sbin/set_polkit_default_privs
+fi
 
 # --- 3. User Setup ---
-
+# Ensure essential groups exist
 for group in wheel video audio users render shadow; do
     getent group "$group" >/dev/null 2>&1 || groupadd -r "$group"
 done
@@ -52,24 +55,16 @@ if ! id "$LIVE_USER" &>/dev/null; then
     chmod 0440 "/etc/sudoers.d/$LIVE_USER"
 fi
 
-# --- 4. REPO INJECTION ---
-echo "--- Injecting Official Tumbleweed Repositories ---"
-zypper ar -f -n "openSUSE Tumbleweed OSS" http://download.opensuse.org/tumbleweed/repo/oss/ repo-oss
-zypper ar -f -n "openSUSE Tumbleweed Non-OSS" http://download.opensuse.org/tumbleweed/repo/non-oss/ repo-non-oss
-zypper ar -f -n "openSUSE Tumbleweed Update" http://download.opensuse.org/update/tumbleweed/ repo-update
-
-zypper --gpg-auto-import-keys ref || true
+# --- 4. REPO CONFIGURATION ---
+# FIX: Removed Section 4 (Repo Injection) because OBS has no internet.
+# Repositories must be defined in your .kiwi file instead.
 
 # --- 5. Desktop Finalization ---
+# FIX: Use systemctl instead of manual ln -sf to avoid "Failed to enable unit".
+systemctl enable NetworkManager
+systemctl enable sddm
 
-systemctl enable NetworkManager sddm
-
-if [ -f /usr/lib/systemd/system/sddm.service ]; then
-    mkdir -p /etc/systemd/system/graphical.target.wants
-    ln -sf /usr/lib/systemd/system/sddm.service /etc/systemd/system/display-manager.service
-    ln -sf /usr/lib/systemd/system/sddm.service /etc/systemd/system/graphical.target.wants/sddm.service
-fi
-
+# Configure SDDM autologin
 mkdir -p /etc/sddm.conf.d
 SESSION_FILE=$(find /usr/share/wayland-sessions -name "*plasma*.desktop" | head -n1 || echo "plasma.desktop")
 SESSION_NAME=$(basename "$SESSION_FILE")
@@ -85,6 +80,7 @@ Session=${SESSION_NAME}
 Relogin=false
 EOF
 
+# Branding & Hostname
 echo "$HOSTNAME" > /etc/hostname
 
 cat > /etc/os-release << EOF
@@ -97,7 +93,8 @@ VARIANT="Live"
 HOME_URL="https://github.com/Apex-Linux"
 EOF
 
-# Fix podman capabilities
+# --- 6. Security & Cleanup ---
+# Fix capabilities for rootless containers
 for bin in /usr/bin/newuidmap /usr/bin/newgidmap; do
     if [ -x "$bin" ]; then
         if command -v setcap >/dev/null 2>&1; then
@@ -108,8 +105,11 @@ for bin in /usr/bin/newuidmap /usr/bin/newgidmap; do
     fi
 done
 
-sed -i 's/^solver.onlyRequires.*/solver.onlyRequires = false/' /etc/zypp/zypp.conf
+# Set default boot target
 systemctl set-default graphical.target
+
+# Update system databases
+sed -i 's/^solver.onlyRequires.*/solver.onlyRequires = false/' /etc/zypp/zypp.conf
 [ -x /usr/bin/systemd-hwdb ] && systemd-hwdb update || true
 
 exit 0
