@@ -44,6 +44,9 @@
         <package name="libpwquality1"/>
 </packages>
     <packages type="image">
+        <package name="update-alternatives"/>
+        <package name="fuse3"/>
+        <package name="mesa-demo-x"/>
         <package name="gzip"/>
         <package name="libudev1"/>
         <package name="libcurl4"/>
