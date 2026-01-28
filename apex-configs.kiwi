@@ -7,7 +7,7 @@
     </description>
 
     <preferences arch="x86_64">
-        <version>1.0.4</version>
+        <version>1.0.0</version>
         <packagemanager>zypper</packagemanager>
         <rpm-check-signatures>false</rpm-check-signatures>
         <locale>en_US</locale>
@@ -27,7 +27,7 @@
     </preferences>
 
     <repository type="rpm-md">
-        <source path="obsrepositories:/"/>
+        <source path="http://download.opensuse.org/tumbleweed/repo/oss/"/>
     </repository>
 
     <packages type="bootstrap">
@@ -78,8 +78,6 @@
         <package name="polkit-default-privs"/>
         <package name="libcap-progs"/>
 
-        <package name="libSPIRV-Tools-2025_5_rc1"/>
-
         <package name="plasma6-session"/>
         <package name="plasma6-workspace"/>
         <package name="kwin6"/> 
@@ -90,9 +88,7 @@
         
         <package name="konsole"/>
         <package name="dolphin"/>
-        <package name="breeze6-icons"/>
-        
-        <package name="NetworkManager"/>
+        <package name="kf6-breeze-icons"/> <package name="NetworkManager"/>
         <package name="pipewire-alsa"/>
         <package name="podman"/>
     </packages>
