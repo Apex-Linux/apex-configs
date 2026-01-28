@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<image schemaversion="8.4" name="Apex-Linux">
+<image schemaversion="7.4" name="Apex-Linux">
     <description type="system">
         <author>ackerman &amp; frost</author>
         <contact>mdzunaid384@gmail.com</contact>
@@ -39,29 +39,27 @@
     </packages>
 
     <packages type="image">
-        <package name="gzip"/>                          
-        <package name="libudev1"/>                     
-        <package name="libcurl4"/>           
-        <package name="glib2"/>                        
-        <package name="krb5"/>                     
-        <package name="gettext-runtime"/>             
-        <package name="shadow"/>                       
-        <package name="libgomp1"/>                     
-        <package name="NetworkManager-branding-upstream"/> 
-        <package name="libcontainers-default-policy"/> 
-        <package name="registries-conf-default"/>         
-        <package name="dbus-broker-allow-restart"/>   
-        <package name="libXaw7"/>                    
-        <package name="mozilla-nss-certs"/>         
-        <package name="libavutil60"/>            
-        <package name="libpxbackend-1_0"/>      
+        <package name="gzip"/>
+        <package name="libudev1"/>
+        <package name="libcurl4"/>
+        <package name="krb5"/>
+        <package name="gettext-runtime"/>
         <package name="libglib-2_0-0"/>
         <package name="libgobject-2_0-0"/>
         <package name="libgio-2_0-0"/>
         <package name="libgomp1"/>
         <package name="libpxbackend-1_0"/>
-        <package name="account-utils"/>
-        <package name="gio-branding-upstream"/>
+        
+        <package name="account-utils"/> <package name="gio-branding-upstream"/> 
+        <package name="NetworkManager-branding-upstream"/> 
+        <package name="libcontainers-default-policy"/>     
+        <package name="registries-conf-default"/>          
+        <package name="dbus-broker-allow-restart"/>
+        
+        <package name="libXaw7"/>           
+        <package name="mozilla-nss-certs"/> 
+        <package name="libavutil60"/>
+
         <package name="parted"/>
         <package name="dolly"/>
         <package name="dialog"/>
@@ -96,6 +94,7 @@
         <package name="bluez-firmware"/>
 
         <package name="sudo"/>
+        <package name="shadow"/>
         <package name="polkit"/>
         <package name="polkit-default-privs"/>
         <package name="libcap-progs"/>
@@ -113,7 +112,8 @@
         <package name="kf6-breeze-icons"/>
         
         <package name="NetworkManager"/>
+        <package name="pipewire"/>
         <package name="pipewire-alsa"/>
-        <package name="podman"/>
+        <package name="pipewire-pulseaudio"/> <package name="wireplumber"/>         <package name="podman"/>
     </packages>
 </image>
