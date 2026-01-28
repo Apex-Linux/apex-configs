@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <image schemaversion="8.3" name="Apex-Linux">
 
+    <!-- Description -->
     <description type="system">
         <author>ackerman &amp; frost</author>
         <contact>mdzunaid384@gmail.com &amp; paponfkb@gmail.com</contact>
         <specification>Apex Linux – Tumbleweed-based Distribution</specification>
     </description>
 
+    <!-- Preferences -->
     <preferences arch="x86_64">
         <version>1.0.0</version>
         <packagemanager>zypper</packagemanager>
@@ -25,16 +27,15 @@
         </type>
     </preferences>
 
-    <!-- OBS INTERNAL REPOSITORIES -->
+    <!-- OBS Internal Repositories -->
     <repository type="rpm-md" alias="factory-oss">
         <source path="obs:/openSUSE:Factory/standard"/>
     </repository>
-
     <repository type="rpm-md" alias="factory-non-oss">
         <source path="obs:/openSUSE:Factory:NonFree/standard"/>
     </repository>
 
-    <!-- BOOTSTRAP -->
+    <!-- Bootstrap Packages -->
     <packages type="bootstrap">
         <package name="filesystem"/>
         <package name="glibc"/>
@@ -45,7 +46,7 @@
         <package name="openSUSE-release"/>
     </packages>
 
-    <!-- IMAGE PACKAGES -->
+    <!-- Image Packages -->
     <packages type="image">
 
         <!-- Base system -->
@@ -65,7 +66,7 @@
         <package name="dosfstools"/>
         <package name="efibootmgr"/>
 
-        <!-- KDE Plasma (explicit, OBS-safe) -->
+        <!-- KDE Plasma -->
         <package name="plasma6-desktop"/>
         <package name="plasma6-workspace"/>
         <package name="sddm"/>
@@ -93,7 +94,7 @@
         <package name="polkit-default-privs"/>
         <package name="hicolor-icon-theme"/>
 
-        <!-- KIWI deps -->
+        <!-- Kiwi deps -->
         <package name="kiwi-systemdeps-iso-media"/>
         <package name="kiwi-systemdeps-bootloaders"/>
 
@@ -104,22 +105,16 @@
         <service name="systemd-vconsole-setup" enable="false"/>
     </services>
 
-    <!-- USERS -->
+    <!-- Users -->
     <users>
         <user name="root"
               crypted="$6$rounds=4096$ApexLinux$7iH6D.Wq5v6O/M.yX1gG6O5Bv0Fv9f6W1v7O8p9G7Q8"
               groups="root"
               home="/root"/>
-
         <user name="apex"
               crypted="$6$rounds=4096$ApexUser$O8Z5rGv9Hj5.m9eQ7wX1V6u0F4z3Y2x8P1T"
               groups="users,wheel,video,audio"
               home="/home/apex"/>
     </users>
-
-    <!-- Silence OBS VM console warning -->
-    <systemd>
-        <disable name="systemd-vconsole-setup.service"/>
-    </systemd>
 
 </image>
