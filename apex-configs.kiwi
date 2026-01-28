@@ -5,7 +5,7 @@
         <contact>mdzunaid384@gmail.com</contact>
         <specification>Apex Linux – Tumbleweed-based Distribution</specification>
     </description>
-    
+
     <preferences arch="x86_64">
         <version>1.0.4</version>
         <packagemanager>zypper</packagemanager>
@@ -49,6 +49,11 @@
         <package name="konsole"/>
         <package name="NetworkManager"/>
 
-        <package name="sudo"/>            <package name="podman"/>          <package name="shadow"/>          <package name="libcap-progs"/>    <package name="kiwi-systemdeps-iso-media"/>
+        <package name="sudo"/>
+        <package name="podman"/>
+        <package name="shadow"/>
+        <package name="libcap-progs"/>
+        
+        <package name="haveged"/>          <package name="pipewire-alsa"/>    <package name="xf86-video-fbdev"/> <package name="kiwi-systemdeps-iso-media"/>
     </packages>
 </image>
