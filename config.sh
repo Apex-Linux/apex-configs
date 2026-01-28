@@ -3,6 +3,7 @@ set -euo pipefail
 
 # --- OFFICIAL DRACUT CONFIGURATION ---
 echo 'add_drivers+=" overlay squashfs loop "' > /etc/dracut.conf.d/force-drivers.conf
+echo 'omit_dracutmodules+=" crypt "' > /etc/dracut.conf.d/omit-crypto.conf
 
 # --- Safety Check: Ensure Root ---
 if [ "$(id -u)" -ne 0 ]; then
