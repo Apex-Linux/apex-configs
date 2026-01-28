@@ -1,83 +1,88 @@
 <?xml version="1.0" encoding="utf-8"?>
 <image schemaversion="8.3" name="Apex-Linux">
-    <description type="system">
-        <author>ackerman &amp; frost</author>
-        <contact>mdzunaid384@gmail.com</contact>
-        <specification>Apex Linux – Tumbleweed-based Distribution</specification>
-    </description>
+  <description type="system">
+    <author>ackerman &amp; frost</author>
+    <contact>mdzunaid384@gmail.com</contact>
+    <specification>Apex Linux – Tumbleweed-based Distribution</specification>
+  </description>
 
-    <!-- 1. single profile -->
-    <profiles>
-        <profile name="default" description="Live ISO image"/>
-    </profiles>
-
-    <!-- 2. preferences tied to that profile -->
-    <preferences arch="x86_64" profiles="default">
-        <version>1.0.4</version>
-        <packagemanager>zypper</packagemanager>
-        <rpm-check-signatures>false</rpm-check-signatures>
-        <locale>en_US</locale>
-        <keytable>us</keytable>
-        <timezone>UTC</timezone>
-
-        <type image="iso"
-              volid="APEX_LINUX"
-              filesystem="squashfs"
-              flags="overlay"
-              firmware="uefi">
-            <bootloader name="grub2" timeout="10"/>
-        </type>
-    </preferences>
-
-    <!-- 3. users inside the same profile -->
-    <users profiles="default">
+  <!-- PROPER STRUCTURE: users MUST be INSIDE profile -->
+  <profiles>
+    <profile name="default" description="Live ISO image">
+      <users>
         <user name="root"
               password="$6$rounds=4096$ApexLinux$7iH6D.Wq5v6O/M.yX1gG6O5Bv0Fv9f6W1v7O8p9G7Q8"
               groups="root"/>
         <user name="apex"
               password="$6$rounds=4096$ApexUser$O8Z5rGv9Hj5.m9eQ7wX1V6u0F4z3Y2x8P1T"
-              groups="users,wheel,video,audio"/>
-    </users>
+              groups="users,wheel,video,audio"
+              home="/home/apex"/>
+      </users>
+    </profile>
+  </profiles>
 
-    <!-- 4. repository -->
-    <repository type="rpm-md">
-        <source path="obsrepositories:/"/>
-    </repository>
+  <preferences profiles="default">
+    <version>1.0.4</version>
+    <packagemanager>zypper</packagemanager>
+    <rpm-check-signatures>false</rpm-check-signatures>
+    <locale>en_US</locale>
+    <keytable>us</keytable>
+    <timezone>UTC</timezone>
+    <hwclock>utc</hwclock>
 
-    <!-- 5. bootstrap packages -->
-    <packages type="bootstrap" profiles="default">
-        <package name="filesystem"/>
-        <package name="glibc-locale-base"/>
-        <package name="bash"/>
-        <package name="openSUSE-release"/>
-        <package name="aaa_base"/>
-    </packages>
+    <type image="iso"
+          volid="APEX_LINUX"
+          filesystem="squashfs"
+          flags="overlay"
+          firmware="uefi"
+          bootloader="grub2"
+          hybridpersistent_filesystem="ext4"
+          hybridpersistent="true">
+      <bootloader name="grub2" timeout="10"/>
+      <!-- Required for overlay/live ISO -->
+      <systemdisk/>
+    </type>
+  </preferences>
 
-    <!-- 6. image packages -->
-    <packages type="image" profiles="default">
-        <package name="zypper"/>
-        <package name="kernel-default"/>
-        <package name="kernel-firmware-all"/>
-        <package name="dracut-kiwi-live"/>
-        <package name="grub2"/>
-        <package name="grub2-x86_64-efi"/>
-        <package name="shim"/>
+  <repository type="rpm-md">
+    <source path="obsrepositories:/"/>
+  </repository>
 
-        <package name="patterns-kde-kde_plasma6"/>
-        <package name="plasma6-session"/>
-        <package name="qt6-wayland"/>
-        <package name="sddm"/>
-        <package name="sddm-branding-openSUSE"/>
-        <package name="konsole"/>
-        <package name="NetworkManager"/>
+  <packages type="bootstrap">
+    <package name="filesystem"/>
+    <package name="glibc-locale-base"/>
+    <package name="bash"/>
+    <package name="openSUSE-release"/>
+    <package name="aaa_base"/>
+  </packages>
 
-        <package name="sudo"/>
-        <package name="podman"/>
-        <package name="shadow"/>
-        <package name="libcap-progs"/>
+  <packages type="image">
+    <package name="zypper"/>
+    <package name="kernel-default"/>
+    <package name="kernel-firmware-all"/>
+    <package name="dracut-kiwi-live"/>
+    <package name="grub2"/>
+    <package name="grub2-x86_64-efi"/>
+    <package name="shim"/>
 
-        <package name="haveged"/>
-        <package name="pipewire-alsa"/>
-        <package name="Mesa-dri"/>
-    </packages>
+    <package name="patterns-kde-kde_plasma6"/>
+    <package name="plasma6-session"/>
+    <package name="qt6-wayland"/>
+    <package name="sddm"/>
+    <package name="sddm-branding-openSUSE"/>
+    <package name="konsole"/>
+    <package name="NetworkManager"/>
+
+    <package name="sudo"/>
+    <package name="podman"/>
+    <package name="shadow"/>
+    <package name="libcap-progs"/>
+
+    <package name="haveged"/>
+    <package name="pipewire-alsa"/>
+    <package name="Mesa-dri"/>
+    
+    <!-- Critical for overlay/live functionality -->
+    <package name="overlayfs"/>
+  </packages>
 </image>
