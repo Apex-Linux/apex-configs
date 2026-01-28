@@ -36,6 +36,10 @@
     </packages>
 
     <packages type="image">
+        <package name="parted"/>       
+        <package name="dolly"/>        
+        <package name="cryptsetup"/>   
+        <package name="dialog"/>       
         <package name="kernel-default"/>
         <package name="kernel-firmware-all"/>
         <package name="dracut"/>
@@ -43,7 +47,8 @@
         <package name="udev"/>
         <package name="systemd"/>
         <package name="zypper"/>
-        <package name="xorriso"/>
+        <package name="xorriso"/>      
+        <package name="lvm2"/>         
         <package name="grub2"/>
         <package name="grub2-x86_64-efi"/>
         <package name="grub2-i386-pc"/>
