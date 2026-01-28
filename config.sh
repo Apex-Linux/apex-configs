@@ -2,10 +2,12 @@
 # Apex Linux Phase 4: Final Hardened & Self-Auditing Configuration
 set -euo pipefail
 
-# --- CRITICAL BOOT FIX ---
-# Forces drivers needed for the Live ISO to boot correctly.
-# Validated by common dracut module requirements for live booting.
+# --- CRITICAL BOOT FIX: THE NUCLEAR OPTION ---
+# 1. FORCE drivers needed for the Live ISO (Overlay, SquashFS).
 echo 'add_drivers+=" overlay squashfs loop "' > /etc/dracut.conf.d/force-drivers.conf
+
+# 2. BAN drivers causing the crash.
+echo 'omit_dracutmodules+=" crypt lvm dm "' > /etc/dracut.conf.d/omit-crypto.conf
 
 # --- Safety Check: Ensure Root ---
 if [ "$(id -u)" -ne 0 ]; then
@@ -38,8 +40,7 @@ echo "root:linux" | chpasswd
 
 if ! id "$LIVE_USER" &>/dev/null; then
     useradd -m -s /bin/bash -G wheel,video,audio,users,render "$LIVE_USER"
-    # CRITICAL CHANGE: Do not lock the account! Set a fallback password.
-    # This ensures you can login if the graphical boot fails.
+    # CRITICAL CHANGE: Not locking the account! Set a fallback password.
     echo "$LIVE_USER:$LIVE_PASS" | chpasswd
     
     cat > /etc/sudoers.d/apex <<'EOF'
