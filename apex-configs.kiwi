@@ -45,18 +45,32 @@
     </packages>
 
     <packages type="image">
+        <package name="shadow-pw-mgmt"/>           
+        <package name="openSUSE-build-key"/>      
+        <package name="branding-openSUSE"/>       
+        <package name="gio-branding-openSUSE"/>   
+        <package name="chrony"/>                   
+        <package name="mozilla-nss-certs"/>    
+        <package name="dbus-broker-allow-restart"/>
+        <package name="gettext-runtime"/>          
+        <package name="libudev1"/>           
+        <package name="libcurl4"/>              
+        <package name="krb5"/>             
+        <package name="libpxbackend-1_0"/>      
+        <package name="libXaw7"/>              
+        <package name="libglib-2_0-0"/>
+        <package name="libgobject-2_0-0"/>
+        <package name="libgio-2_0-0"/>
+        <package name="libgmodule-2_0-0"/>
+
+        <package name="libavutil60"/>
+        <package name="libavcodec62"/>
+        <package name="libswscale9"/>
+        <package name="libavfilter11"/>
+        
+        <package name="libgomp1"/>                
         <package name="patterns-base-minimal_base"/>
         <package name="patterns-kde-kde_plasma"/>
-        <package name="openSUSE-build-key"/>       
-        <package name="branding-openSUSE"/>        
-        <package name="shadow-pw-mgmt"/>           
-        <package name="libcurl4"/>                 
-        <package name="libudev1"/>                 
-        <package name="krb5"/>                     
-        <package name="gettext-runtime"/>          
-        <package name="libglib-2_0-0"/>            
-        <package name="libgobject-2_0-0"/> 
-        <package name="libgio-2_0-0"/>        
 
         <package name="kernel-default"/>
         <package name="kernel-firmware-all"/>
