@@ -29,10 +29,10 @@
         <package name="glibc"/>
         <package name="bash"/>
         <package name="openSUSE-release"/>
+        <package name="aaa_base"/>
     </packages>
 
     <packages type="image">
-        <package name="aaa_base"/>
         <package name="zypper"/>
         <package name="kernel-default"/>
         <package name="kernel-firmware-all"/>
@@ -42,11 +42,13 @@
         <package name="shim"/>
         
         <package name="patterns-kde-kde_plasma6"/>
+        <package name="plasma6-session"/>
+        <package name="qt6-wayland"/>
         <package name="sddm"/>
         <package name="sddm-branding-openSUSE"/>
         <package name="konsole"/>
         <package name="NetworkManager"/>
-        
-        <package name="kiwi-systemdeps-iso-media"/>
+
+        <package name="sudo"/>            <package name="podman"/>          <package name="shadow"/>          <package name="libcap-progs"/>    <package name="kiwi-systemdeps-iso-media"/>
     </packages>
 </image>
