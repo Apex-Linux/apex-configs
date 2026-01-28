@@ -2,7 +2,7 @@
 # Apex Linux Phase 4: Final Hardened & Self-Auditing Configuration
 set -euo pipefail
 
-# --- CRITICAL BOOT FIX ---
+# --- CRITICAL BOOT FIX [Wiki Section 7.8] ---
 # Forces drivers needed for the Live ISO to boot correctly.
 echo 'add_drivers+=" overlay squashfs loop "' > /etc/dracut.conf.d/force-drivers.conf
 
@@ -13,7 +13,8 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 LIVE_USER="apex"
-LIVE_PASS="" 
+# SAFETY NET: Default password "live" allows login if GUI crashes (TTY access)
+LIVE_PASS="live" 
 
 echo "--- [1/5] Initializing User & Group Security ---"
 
@@ -36,7 +37,8 @@ echo "root:linux" | chpasswd
 
 if ! id "$LIVE_USER" &>/dev/null; then
     useradd -m -s /bin/bash -G wheel,video,audio,users,render "$LIVE_USER"
-    [ -n "$LIVE_PASS" ] && echo "$LIVE_USER:$LIVE_PASS" | chpasswd || passwd -l "$LIVE_USER"
+    # CRITICAL CHANGE: Do not lock the account! Set a fallback password.
+    echo "$LIVE_USER:$LIVE_PASS" | chpasswd
     
     cat > /etc/sudoers.d/apex <<'EOF'
 apex ALL=(ALL) NOPASSWD: ALL
@@ -55,19 +57,25 @@ fi
 echo "--- [2/5] Configuring Services & Polkit ---"
 
 # --- POLKIT REPAIR FIX ---
-# 1. Create the directory that was missing in the logs
 mkdir -p /etc/polkit-1/rules.d/
 chmod 750 /etc/polkit-1/rules.d/ 
 chown polkitd:root /etc/polkit-1/rules.d/ 2>/dev/null || true
 
-# 2. FORCE REGENERATION of the rules file (Fixes the %post script error)
+# Force regeneration of rules
 if [ -x /usr/sbin/set_polkit_default_privs ]; then
     /usr/sbin/set_polkit_default_privs
     echo "  [FIX] Polkit default privileges regenerated."
 fi
 
+# Enable critical services
 systemctl enable NetworkManager 2>/dev/null || true
 systemctl enable sddm 2>/dev/null || true
+
+# Enable zRAM for better performance in Live Mode
+if systemctl list-unit-files | grep -q zramswap.service; then
+    systemctl enable zramswap
+    echo "  [PERF] zRAM swap enabled."
+fi
 
 for possible in /usr/lib/systemd/system/sddm.service /lib/systemd/system/sddm.service; do
   if [ -f "$possible" ]; then
