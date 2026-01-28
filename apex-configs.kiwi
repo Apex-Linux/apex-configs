@@ -88,7 +88,7 @@
         
         <package name="konsole"/>
         <package name="dolphin"/>
-        <package name="breeze6-icons"/>
+        <package name="kf6-breeze-icons"/>
         
         <package name="NetworkManager"/>
         <package name="pipewire-alsa"/>
