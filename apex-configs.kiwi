@@ -51,6 +51,7 @@
 
         <package name="patterns-kde-kde_plasma"/>
         <package name="plasma6-session"/>
+        <package name="plasma6-session-x11"/>
         <package name="qt6-wayland"/>
         <package name="sddm"/>
         <package name="sddm-branding-openSUSE"/>
