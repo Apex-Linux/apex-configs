@@ -49,7 +49,7 @@
         <package name="grub2-x86_64-efi"/>
         <package name="shim"/>
 
-        <package name="patterns-kde-kde_plasma6"/>
+        <package name="patterns-kde-kde_plasma"/>
         <package name="plasma6-session"/>
         <package name="qt6-wayland"/>
         <package name="sddm"/>
