@@ -14,6 +14,8 @@
         <keytable>us</keytable>
         <timezone>UTC</timezone>
 
+        <solver-includes>recommends</solver-includes>
+
         <type image="iso"
               volid="APEX_LINUX"
               publisher="Apex Linux Team"
@@ -39,14 +41,12 @@
         <package name="aaa_base"/>        
         <package name="ncurses-utils"/>
         <package name="coreutils"/>     
-        <package name="shadow"/>      
+        <package name="shadow"/>       
         <package name="diffutils"/>
         <package name="libpwquality1"/>
-</packages>
+    </packages>
+
     <packages type="image">
-        <package name="update-alternatives"/>
-        <package name="fuse3"/>
-        <package name="Mesa-demo-x"/>
         <package name="gzip"/>
         <package name="libudev1"/>
         <package name="libcurl4"/>
@@ -60,10 +60,10 @@
         <package name="account-utils"/>
         <package name="gio-branding-upstream"/> 
         <package name="NetworkManager-branding-upstream"/> 
-        <package name="libcontainers-default-policy"/>     
+        <package name="libcontainers-default-policy"/>      
         <package name="registries-conf-default"/>          
         <package name="dbus-broker-allow-restart"/>
-        <package name="libXaw7"/>           
+        <package name="libXaw7"/>            
         <package name="mozilla-nss-certs"/> 
         <package name="libavutil60"/>
 
@@ -104,7 +104,8 @@
         <package name="bluez-firmware"/>
 
         <package name="sudo"/>
-        <package name="polkit"/> <package name="polkit-default-privs"/>
+        <package name="polkit"/> 
+        <package name="polkit-default-privs"/>
         <package name="libcap-progs"/>
 
         <package name="plasma6-session"/>
