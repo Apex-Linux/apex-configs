@@ -27,7 +27,7 @@
         </type>
     </preferences>
 
-    <!-- OBS Internal Repositories -->
+    <!-- OBS Repositories -->
     <repository type="rpm-md" alias="factory-oss">
         <source path="obs:/openSUSE:Factory/standard"/>
     </repository>
@@ -48,62 +48,40 @@
 
     <!-- Image Packages -->
     <packages type="image">
-
-        <!-- Base system -->
         <package name="patterns-base-base"/>
         <package name="patterns-base-enhanced_base"/>
-
-        <!-- Kernel & boot -->
         <package name="kernel-default"/>
         <package name="kernel-firmware-all"/>
         <package name="dracut"/>
         <package name="dracut-kiwi-live"/>
-
-        <!-- Bootloader -->
         <package name="grub2"/>
         <package name="grub2-x86_64-efi"/>
         <package name="shim"/>
         <package name="dosfstools"/>
         <package name="efibootmgr"/>
-
-        <!-- KDE Plasma -->
         <package name="plasma6-desktop"/>
         <package name="plasma6-workspace"/>
         <package name="sddm"/>
         <package name="konsole"/>
         <package name="dolphin"/>
         <package name="plasma6-nm"/>
-
-        <!-- Networking & audio -->
         <package name="NetworkManager"/>
         <package name="NetworkManager-branding-openSUSE"/>
         <package name="pipewire"/>
         <package name="pipewire-pulseaudio"/>
         <package name="wireplumber"/>
-
-        <!-- Graphics -->
         <package name="Mesa-dri"/>
         <package name="Mesa-libGL1"/>
         <package name="Mesa-libEGL1"/>
-
-        <!-- Utilities -->
         <package name="sudo"/>
         <package name="shadow"/>
         <package name="vim"/>
         <package name="fastfetch"/>
         <package name="polkit-default-privs"/>
         <package name="hicolor-icon-theme"/>
-
-        <!-- Kiwi deps -->
         <package name="kiwi-systemdeps-iso-media"/>
         <package name="kiwi-systemdeps-bootloaders"/>
-
     </packages>
-
-    <!-- Services -->
-    <services>
-        <service name="systemd-vconsole-setup" enable="false"/>
-    </services>
 
     <!-- Users -->
     <users>
@@ -116,5 +94,10 @@
               groups="users,wheel,video,audio"
               home="/home/apex"/>
     </users>
+
+    <!-- Services -->
+    <services>
+        <service name="systemd-vconsole-setup" enable="false"/>
+    </services>
 
 </image>
