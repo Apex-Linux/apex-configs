@@ -20,7 +20,7 @@
               application_id="Apex Linux Live"
               mediacheck="true"
               filesystem="squashfs"
-              flags="overlay"
+              flags="dmsquash"
               firmware="uefi"
               kernelcmdline="rd.luks=0 rd.lvm=0 rd.md=0">
             <bootloader name="grub2" timeout="10"/>
@@ -43,13 +43,11 @@
         <package name="parted"/>
         <package name="dolly"/>
         <package name="dialog"/>
-        <package name="cryptsetup"/>
-        <package name="xorriso"/>
-        <package name="lvm2"/> 
+        <package name="cryptsetup"/> <package name="xorriso"/>
+        <package name="lvm2"/>
+        
         <package name="kernel-default"/>
         <package name="kernel-firmware-all"/>
-        <package name="dracut"/>
-        <package name="dracut-kiwi-live"/>
         <package name="udev"/>
         <package name="systemd"/>
         <package name="zypper"/>
