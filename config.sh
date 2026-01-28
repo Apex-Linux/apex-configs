@@ -115,8 +115,7 @@ for bin in /usr/bin/newuidmap /usr/bin/newgidmap; do
 done
 
 # --- SOLVER UNLOCK ---
-# Critical: We allow Zypper to install "Recommended" packages.
-# This ensures that Mesa pulls in the correct spirv-tools automatically.
+# Critical: Allow Zypper to match the _rc1 package to the ~rc1 requirement
 sed -i 's/^solver.onlyRequires.*/solver.onlyRequires = false/' /etc/zypp/zypp.conf
 
 # Set default boot target
