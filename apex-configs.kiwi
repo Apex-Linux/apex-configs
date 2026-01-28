@@ -42,6 +42,11 @@
         <package name="shadow"/>       
         <package name="diffutils"/>
         <package name="libpwquality1"/>
+        <package name="xz"/>
+        <package name="grep"/>
+        <package name="sed"/>
+        <package name="tar"/>
+        <package name="gzip"/>
     </packages>
 
     <packages type="image">
