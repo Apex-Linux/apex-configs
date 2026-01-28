@@ -5,7 +5,6 @@
 set -euo pipefail
 
 # --- Configuration Variables ---
-DISTRO_NAME="Apex Linux"
 LIVE_USER="apex"
 LIVE_PASS="live"
 HOSTNAME="apex-linux"
@@ -18,9 +17,10 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
+# Enable Standard Live Drivers
 echo 'add_drivers+=" overlay squashfs loop "' > /etc/dracut.conf.d/10-apex-live.conf
 
-# Enable zRAM if available (Performance for Live environment)
+# Enable zRAM
 if systemctl list-unit-files | grep -q zramswap.service; then
     systemctl enable zramswap
 fi
@@ -38,7 +38,7 @@ echo "root:linux" | chpasswd
 # Setup Live User
 if ! id "$LIVE_USER" &>/dev/null; then
     useradd -m -s /bin/bash -c "Apex Live User" -G wheel,video,audio,users,render "$LIVE_USER"
-    # Set fallback password for TTY access
+    # Set fallback password
     echo "$LIVE_USER:$LIVE_PASS" | chpasswd
     
     # Sudoers configuration
@@ -51,12 +51,12 @@ if ! id "$LIVE_USER" &>/dev/null; then
     grep -q "^${LIVE_USER}:" /etc/subgid || echo "${LIVE_USER}:100000:65536" >> /etc/subgid
 fi
 
-# Ensures the live user can manage network/power without password prompts
+# Polkit Permissions Fix
 mkdir -p /etc/polkit-1/rules.d/
 chmod 750 /etc/polkit-1/rules.d/
 chown polkitd:root /etc/polkit-1/rules.d/ 2>/dev/null || true
 
-# Regenerate openSUSE privs if the tool exists
+# Regenerate openSUSE privs
 [ -x /usr/sbin/set_polkit_default_privs ] && /usr/sbin/set_polkit_default_privs
 
 # --- 3. Desktop & Display Manager ---
@@ -65,7 +65,6 @@ chown polkitd:root /etc/polkit-1/rules.d/ 2>/dev/null || true
 systemctl enable NetworkManager sddm
 
 # Fix SDDM Service Symlinks
-# Forces systemd to recognize SDDM as the display manager
 if [ -f /usr/lib/systemd/system/sddm.service ]; then
     mkdir -p /etc/systemd/system/graphical.target.wants
     ln -sf /usr/lib/systemd/system/sddm.service /etc/systemd/system/display-manager.service
@@ -74,8 +73,6 @@ fi
 
 # Configure SDDM Autologin (Wayland)
 mkdir -p /etc/sddm.conf.d
-
-# Dynamic session detection (Prefer Plasma, fall back to whatever is there)
 SESSION_FILE=$(find /usr/share/wayland-sessions -name "*plasma*.desktop" | head -n1 || echo "plasma.desktop")
 SESSION_NAME=$(basename "$SESSION_FILE")
 
@@ -97,32 +94,27 @@ echo "$HOSTNAME" > /etc/hostname
 
 # Set OS Release Info
 cat > /etc/os-release << EOF
-NAME="${DISTRO_NAME}"
+NAME="Apex Linux"
 VERSION="2026 (Plasma 6)"
 ID=apexlinux
 ID_LIKE="suse opensuse tumbleweed"
-PRETTY_NAME="${DISTRO_NAME} Plasma 6"
+PRETTY_NAME="Apex Linux Plasma 6"
 VARIANT="Live"
 HOME_URL="https://github.com/Apex-Linux"
 EOF
 
-# Fix SetUID permissions for Podman/Buildah tools
+# Fix SetUID permissions
 for bin in /usr/bin/newuidmap /usr/bin/newgidmap; do
     if [ -x "$bin" ]; then
-        # If setcap is available, use capabilities (secure), otherwise fallback to SUID
         if command -v setcap >/dev/null 2>&1; then
-            if [[ "$bin" == *newuidmap ]]; then
-                 setcap cap_setuid+ep "$bin"
-            else
-                 setcap cap_setgid+ep "$bin"
-            fi
+            [[ "$bin" == *newuidmap ]] && setcap cap_setuid+ep "$bin" || setcap cap_setgid+ep "$bin"
         else
             chmod 4755 "$bin"
         fi
     fi
 done
 
-# Optimize Zypper for the live environment (don't install recommended bloat)
+# Optimize Zypper
 sed -i 's/^# solver.onlyRequires.*/solver.onlyRequires = true/' /etc/zypp/zypp.conf
 
 # Set default boot target
