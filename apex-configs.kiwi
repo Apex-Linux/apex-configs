@@ -31,7 +31,7 @@
     </repository>
 
     <packages type="bootstrap">
-        <package name="shadow-pw-mgmt"/>         
+        <package name="shadow-pw-mgmt"/>           
         <package name="openSUSE-release"/>
         <package name="filesystem"/>
         <package name="glibc-locale-base"/>
@@ -44,21 +44,21 @@
         <package name="diffutils"/>
         <package name="libpwquality1"/>
         
-        <package name="xz"/>                     
-        <package name="grep"/>                   
+        <package name="xz"/>                       <package name="grep"/>                     
         <package name="sed"/>
         <package name="tar"/>
         <package name="gzip"/>
-        <package name="zypper"/>            
- </packages>
+        <package name="zypper"/>                   
+    </packages>
+
     <packages type="image">
-        <package name="branding-upstream"/>     
+        <package name="branding-upstream"/>      
         <package name="gio-branding-upstream"/>  
-        <package name="openSUSE-build-key"/>  
-        <package name="chrony"/>              
-        <package name="chrony-pool-openSUSE"/>   
+        <package name="openSUSE-build-key"/>      
+        <package name="chrony"/>               
+        <package name="chrony-pool-openSUSE"/>     
         <package name="dbus-broker-allow-restart"/>
-        <package name="mozilla-nss-certs"/>      
+        <package name="mozilla-nss-certs"/>     
         <package name="libcurl4"/>                 
         <package name="libudev1"/>                 
         <package name="krb5"/>                     
@@ -76,17 +76,17 @@
         <package name="libswscale9"/>
         <package name="libavfilter11"/>
 
-        <package name="patterns-base-minimal_base"/>
+        <package name="patterns-base-minimal_base"/> 
         <package name="patterns-kde-kde_plasma"/>    
         <package name="plasma6-session"/>
         <package name="plasma6-workspace"/>
         <package name="qt6-wayland"/>
         <package name="Mesa-dri"/>
 
-        <package name="update-alternatives"/>  
-        <package name="fuse3"/>                 
-        <package name="Mesa-demo-x"/>          
-        <package name="sysvinit-tools"/>           
+        <package name="update-alternatives"/>       
+        <package name="fuse3"/>                     
+        <package name="Mesa-demo-x"/>               
+        <package name="sysvinit-tools"/>            
         <package name="xdpyinfo"/>                 
         <package name="xhost"/>
         <package name="xauth"/>
