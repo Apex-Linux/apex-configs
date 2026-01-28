@@ -55,6 +55,13 @@
         <package name="mozilla-nss-certs"/>         
         <package name="libavutil60"/>            
         <package name="libpxbackend-1_0"/>      
+        <package name="libglib-2_0-0"/>
+        <package name="libgobject-2_0-0"/>
+        <package name="libgio-2_0-0"/>
+        <package name="libgomp1"/>
+        <package name="libpxbackend-1_0"/>
+        <package name="account-utils"/>
+        <package name="gio-branding-upstream"/>
         <package name="parted"/>
         <package name="dolly"/>
         <package name="dialog"/>
