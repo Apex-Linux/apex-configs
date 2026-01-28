@@ -78,6 +78,8 @@
         <package name="polkit-default-privs"/>
         <package name="libcap-progs"/>
 
+        <package name="libSPIRV-Tools-2025_5_rc1"/>
+
         <package name="plasma6-session"/>
         <package name="plasma6-workspace"/>
         <package name="kwin6"/> 
@@ -88,7 +90,7 @@
         
         <package name="konsole"/>
         <package name="dolphin"/>
-        <package name="kf6-breeze-icons"/>
+        <package name="breeze6-icons"/>
         
         <package name="NetworkManager"/>
         <package name="pipewire-alsa"/>
