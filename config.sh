@@ -114,8 +114,10 @@ for bin in /usr/bin/newuidmap /usr/bin/newgidmap; do
     fi
 done
 
-# NOTE: Solver restriction removed to fix library dependencies
-# sed -i 's/^# solver.onlyRequires.*/solver.onlyRequires = true/' /etc/zypp/zypp.conf
+# --- SOLVER UNLOCK ---
+# Critical: We allow Zypper to install "Recommended" packages.
+# This ensures that Mesa pulls in the correct spirv-tools automatically.
+sed -i 's/^solver.onlyRequires.*/solver.onlyRequires = false/' /etc/zypp/zypp.conf
 
 # Set default boot target
 systemctl set-default graphical.target
