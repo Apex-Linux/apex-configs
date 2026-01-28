@@ -18,7 +18,8 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 # Enable Standard Live Drivers
-echo 'add_drivers+=" overlay squashfs loop "' > /etc/dracut.conf.d/10-apex-live.conf
+# We add dm-mod to ensure dmsquash works perfectly
+echo 'add_drivers+=" overlay squashfs loop dm-mod "' > /etc/dracut.conf.d/10-apex-live.conf
 
 # Enable zRAM
 if systemctl list-unit-files | grep -q zramswap.service; then
@@ -113,9 +114,6 @@ for bin in /usr/bin/newuidmap /usr/bin/newgidmap; do
         fi
     fi
 done
-
-# Optimize Zypper
-sed -i 's/^# solver.onlyRequires.*/solver.onlyRequires = true/' /etc/zypp/zypp.conf
 
 # Set default boot target
 systemctl set-default graphical.target
