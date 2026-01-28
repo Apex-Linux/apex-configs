@@ -1,138 +1,134 @@
 #!/usr/bin/env bash
+# Apex Linux - Distribution Configuration Script
+# Target: OpenSUSE Tumbleweed Base (Plasma 6)
+
 set -euo pipefail
 
-# --- OFFICIAL DRACUT CONFIGURATION ---
-echo 'add_drivers+=" overlay squashfs loop "' > /etc/dracut.conf.d/force-drivers.conf
-echo 'omit_dracutmodules+=" crypt "' > /etc/dracut.conf.d/omit-crypto.conf
+# --- Configuration Variables ---
+DISTRO_NAME="Apex Linux"
+LIVE_USER="apex"
+LIVE_PASS="live"
+HOSTNAME="apex-linux"
 
-# --- Safety Check: Ensure Root ---
+# --- 1. System & Boot Configuration ---
+
+# Ensure root
 if [ "$(id -u)" -ne 0 ]; then
-    echo "ERROR: Apex DNA initialization must be run as root!" >&2
+    echo "Error: This script must be run as root." >&2
     exit 1
 fi
 
-LIVE_USER="apex"
-LIVE_PASS="live" 
+echo 'add_drivers+=" overlay squashfs loop "' > /etc/dracut.conf.d/10-apex-live.conf
 
-echo "--- [1/5] Initializing User & Group Security ---"
-
-getent group shadow >/dev/null || groupadd -r shadow
-
-ensure_group() {
-    local g="$1"
-    if getent group "$g" >/dev/null 2>&1; then
-        echo "  [OK] Group '$g' already exists."
-    else
-        groupadd "$g" && echo "  [NEW] Group '$g' created."
-    fi
-}
-
-for g in wheel video audio users render; do
-    ensure_group "$g"
-done
-
-echo "root:linux" | chpasswd
-
-if ! id "$LIVE_USER" &>/dev/null; then
-    useradd -m -s /bin/bash -G wheel,video,audio,users,render "$LIVE_USER"
-    echo "$LIVE_USER:$LIVE_PASS" | chpasswd
-    
-    cat > /etc/sudoers.d/apex <<'EOF'
-apex ALL=(ALL) NOPASSWD: ALL
-EOF
-    chmod 0440 /etc/sudoers.d/apex
-    
-    # Container Support
-    touch /etc/subuid /etc/subgid
-    chmod 0644 /etc/subuid /etc/subgid
-    grep -q "^${LIVE_USER}:" /etc/subuid || echo "${LIVE_USER}:100000:65536" >> /etc/subuid
-    grep -q "^${LIVE_USER}:" /etc/subgid || echo "${LIVE_USER}:100000:65536" >> /etc/subgid
-else
-    echo "  [SKIP] User '$LIVE_USER' already exists."
-fi
-
-echo "--- [2/5] Configuring Services & Polkit ---"
-
-# --- POLKIT REPAIR (Standard Fix) ---
-mkdir -p /etc/polkit-1/rules.d/
-chmod 750 /etc/polkit-1/rules.d/ 
-chown polkitd:root /etc/polkit-1/rules.d/ 2>/dev/null || true
-
-if [ -x /usr/sbin/set_polkit_default_privs ]; then
-    /usr/sbin/set_polkit_default_privs
-fi
-
-# Enable critical services
-systemctl enable NetworkManager 2>/dev/null || true
-systemctl enable sddm 2>/dev/null || true
-
-# Enable zRAM
+# Enable zRAM if available (Performance for Live environment)
 if systemctl list-unit-files | grep -q zramswap.service; then
     systemctl enable zramswap
 fi
 
-for possible in /usr/lib/systemd/system/sddm.service /lib/systemd/system/sddm.service; do
-  if [ -f "$possible" ]; then
-    mkdir -p /etc/systemd/system/graphical.target.wants
-    ln -sf "$possible" /etc/systemd/system/display-manager.service
-    ln -sf "$possible" /etc/systemd/system/graphical.target.wants/sddm.service
-    break
-  fi
+# --- 2. User & Security Setup ---
+
+# Create generic groups if missing
+for group in wheel video audio users render shadow; do
+    getent group "$group" >/dev/null 2>&1 || groupadd -r "$group"
 done
 
-echo "--- [3/5] Detecting Plasma 6 Wayland Session ---"
-mkdir -p /etc/sddm.conf.d
-find_session() {
-    local candidate
-    candidate=$(find /usr/share/wayland-sessions /usr/share/xsessions -maxdepth 1 -type f -name '*plasma*.desktop' 2>/dev/null | head -n1 || true)
-    [ -z "$candidate" ] && candidate=$(find /usr/share/wayland-sessions /usr/share/xsessions -maxdepth 1 -type f -name '*.desktop' 2>/dev/null | head -n1 || true)
-    [ -n "$candidate" ] && basename "$candidate" || echo "plasmawayland.desktop"
-}
-SESSION="$(find_session)"
+# Set Root Password
+echo "root:linux" | chpasswd
 
-cat > /etc/sddm.conf.d/10-wayland.conf << EOF
+# Setup Live User
+if ! id "$LIVE_USER" &>/dev/null; then
+    useradd -m -s /bin/bash -c "Apex Live User" -G wheel,video,audio,users,render "$LIVE_USER"
+    # Set fallback password for TTY access
+    echo "$LIVE_USER:$LIVE_PASS" | chpasswd
+    
+    # Sudoers configuration
+    echo "$LIVE_USER ALL=(ALL) NOPASSWD: ALL" > "/etc/sudoers.d/$LIVE_USER"
+    chmod 0440 "/etc/sudoers.d/$LIVE_USER"
+    
+    # Podman/Container mapping setup
+    touch /etc/subuid /etc/subgid
+    grep -q "^${LIVE_USER}:" /etc/subuid || echo "${LIVE_USER}:100000:65536" >> /etc/subuid
+    grep -q "^${LIVE_USER}:" /etc/subgid || echo "${LIVE_USER}:100000:65536" >> /etc/subgid
+fi
+
+# Ensures the live user can manage network/power without password prompts
+mkdir -p /etc/polkit-1/rules.d/
+chmod 750 /etc/polkit-1/rules.d/
+chown polkitd:root /etc/polkit-1/rules.d/ 2>/dev/null || true
+
+# Regenerate openSUSE privs if the tool exists
+[ -x /usr/sbin/set_polkit_default_privs ] && /usr/sbin/set_polkit_default_privs
+
+# --- 3. Desktop & Display Manager ---
+
+# Enable basic services
+systemctl enable NetworkManager sddm
+
+# Fix SDDM Service Symlinks
+# Forces systemd to recognize SDDM as the display manager
+if [ -f /usr/lib/systemd/system/sddm.service ]; then
+    mkdir -p /etc/systemd/system/graphical.target.wants
+    ln -sf /usr/lib/systemd/system/sddm.service /etc/systemd/system/display-manager.service
+    ln -sf /usr/lib/systemd/system/sddm.service /etc/systemd/system/graphical.target.wants/sddm.service
+fi
+
+# Configure SDDM Autologin (Wayland)
+mkdir -p /etc/sddm.conf.d
+
+# Dynamic session detection (Prefer Plasma, fall back to whatever is there)
+SESSION_FILE=$(find /usr/share/wayland-sessions -name "*plasma*.desktop" | head -n1 || echo "plasma.desktop")
+SESSION_NAME=$(basename "$SESSION_FILE")
+
+cat > /etc/sddm.conf.d/autologin.conf << EOF
 [General]
 DisplayServer=wayland
 GreeterEnvironment=QT_WAYLAND_SHELL_INTEGRATION=layer-shell
 
 [Autologin]
 User=${LIVE_USER}
-Session=${SESSION}
+Session=${SESSION_NAME}
 Relogin=false
 EOF
 
-echo "--- [4/5] Applying Apex Linux Branding ---"
-cat > /etc/os-release << 'EOF'
-NAME="Apex Linux"
-VERSION="2026 (Plasma 6 Edition)"
+# --- 4. Branding & Finalization ---
+
+# Set Hostname
+echo "$HOSTNAME" > /etc/hostname
+
+# Set OS Release Info
+cat > /etc/os-release << EOF
+NAME="${DISTRO_NAME}"
+VERSION="2026 (Plasma 6)"
 ID=apexlinux
 ID_LIKE="suse opensuse tumbleweed"
-PRETTY_NAME="Apex Linux Plasma 6 Edition"
-VARIANT="KDE Plasma 6"
+PRETTY_NAME="${DISTRO_NAME} Plasma 6"
+VARIANT="Live"
 HOME_URL="https://github.com/Apex-Linux"
 EOF
-echo "apex-linux" > /etc/hostname
 
-echo "--- [5/5] Final Hardware & System Tweaks ---"
+# Fix SetUID permissions for Podman/Buildah tools
 for bin in /usr/bin/newuidmap /usr/bin/newgidmap; do
     if [ -x "$bin" ]; then
-        chown root:root "$bin"
+        # If setcap is available, use capabilities (secure), otherwise fallback to SUID
         if command -v setcap >/dev/null 2>&1; then
-            [[ "$bin" == *newuidmap ]] && setcap cap_setuid+ep "$bin" || setcap cap_setgid+ep "$bin"
+            if [[ "$bin" == *newuidmap ]]; then
+                 setcap cap_setuid+ep "$bin"
+            else
+                 setcap cap_setgid+ep "$bin"
+            fi
         else
             chmod 4755 "$bin"
         fi
     fi
 done
 
+# Optimize Zypper for the live environment (don't install recommended bloat)
+sed -i 's/^# solver.onlyRequires.*/solver.onlyRequires = true/' /etc/zypp/zypp.conf
+
+# Set default boot target
 systemctl set-default graphical.target
+
+# Update Hardware Database
 [ -x /usr/bin/systemd-hwdb ] && systemd-hwdb update || true
 
-ZYPP_CONF="/etc/zypp/zypp.conf"
-if [ -f "$ZYPP_CONF" ]; then
-    sed -i 's/^# solver.onlyRequires.*/solver.onlyRequires = true/' "$ZYPP_CONF"
-    sed -i 's/^solver.onlyRequires.*/solver.onlyRequires = true/' "$ZYPP_CONF"
-fi
-
-echo "--- Apex Linux DNA Successfully Initialized! ---"
 exit 0
