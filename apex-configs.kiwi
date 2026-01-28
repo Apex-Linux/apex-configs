@@ -7,7 +7,7 @@
     </description>
 
     <preferences arch="x86_64">
-        <version>1.0.4</version>
+        <version>1.0.0</version>
         <packagemanager>zypper</packagemanager>
         <rpm-check-signatures>false</rpm-check-signatures>
         <locale>en_US</locale>
@@ -45,39 +45,9 @@
     </packages>
 
     <packages type="image">
-        <package name="update-alternatives"/>
-        <package name="fuse3"/>
-        <package name="Mesa-demo-x"/>
-        <package name="sysvinit-tools"/> 
+        <package name="patterns-base-minimal"/>
 
-        <package name="gzip"/>
-        <package name="libudev1"/>
-        <package name="libcurl4"/>
-        <package name="krb5"/>
-        <package name="gettext-runtime"/>
-        <package name="libglib-2_0-0"/>
-        <package name="libgobject-2_0-0"/>
-        <package name="libgio-2_0-0"/>
-        <package name="libgomp1"/>
-        <package name="libpxbackend-1_0"/>
-        <package name="account-utils"/>
-        <package name="gio-branding-upstream"/> 
-        <package name="NetworkManager-branding-upstream"/> 
-        <package name="libcontainers-default-policy"/>      
-        <package name="registries-conf-default"/>          
-        <package name="dbus-broker-allow-restart"/>
-        <package name="libXaw7"/>            
-        <package name="mozilla-nss-certs"/> 
-        <package name="libavutil60"/>
-
-        <package name="parted"/>
-        <package name="dolly"/>
-        <package name="dialog"/>
-        <package name="xorriso"/>
-        <package name="lvm2"/>
-        <package name="cryptsetup"/>
-        <package name="dosfstools"/>
-        <package name="mtools"/>
+        <package name="patterns-kde-kde_plasma"/>
 
         <package name="kernel-default"/>
         <package name="kernel-firmware-all"/>
@@ -86,7 +56,6 @@
         <package name="systemd"/>
         <package name="systemd-sysvinit"/>
         <package name="zypper"/>
-        
         <package name="grub2"/>
         <package name="grub2-x86_64-efi"/>
         <package name="grub2-i386-pc"/>
@@ -95,41 +64,28 @@
 
         <package name="squashfs"/>
         <package name="btrfsprogs"/>
+        <package name="parted"/>
+        <package name="dosfstools"/>
+        <package name="mtools"/>
+        <package name="xorriso"/>
+        <package name="cryptsetup"/>
+        <package name="lvm2"/>
+
+        <package name="NetworkManager"/>
+        <package name="NetworkManager-branding-upstream"/> 
         <package name="iproute2"/>
         <package name="curl"/>
-        <package name="tar"/>
         <package name="openssh-clients"/>
-        <package name="nvme-cli"/>
-        <package name="dbus-1"/>
-        <package name="xz"/>
-        <package name="haveged"/>
-        <package name="systemd-zram-service"/>
-        <package name="bluez-firmware"/>
-
         <package name="sudo"/>
         <package name="polkit"/> 
         <package name="polkit-default-privs"/>
-        <package name="libcap-progs"/>
+        <package name="wget"/>
 
-        <package name="plasma6-session"/>
-        <package name="plasma6-workspace"/>
-        <package name="kwin6"/> 
-        <package name="polkit-kde-agent-6"/>
-        <package name="xwayland"/>
-        
-        <package name="sddm-qt6"/>
-        <package name="sddm-greeter-qt6"/>
-        <package name="sddm-kcm6"/>
-        
         <package name="konsole"/>
         <package name="dolphin"/>
-        <package name="kf6-breeze-icons"/>
-        
-        <package name="NetworkManager"/>
-        <package name="pipewire"/>
+        <package name="sddm-qt6"/> <package name="pipewire"/>
         <package name="pipewire-alsa"/>
         <package name="pipewire-pulseaudio"/>
         <package name="wireplumber"/>
-        <package name="podman"/>
     </packages>
 </image>
