@@ -52,6 +52,12 @@
     </packages>
 
     <packages type="image">
+        <package name="vulkan-tools"/>    
+        <package name="libGLU1"/>
+        <package name="pciutils"/>              
+        <package name="usbutils"/>             
+        <package name="dmidecode"/>                
+        <package name="plasma6-systemmonitor"/>
         <package name="plasma6-activities"/>   
         <package name="systemsettings6"/>          
         <package name="plasma6-nm"/>
