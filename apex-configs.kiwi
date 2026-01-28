@@ -7,7 +7,7 @@
     </description>
 
     <preferences arch="x86_64">
-        <version>1.0.0</version>
+        <version>1.0.4</version>
         <packagemanager>zypper</packagemanager>
         <rpm-check-signatures>false</rpm-check-signatures>
         <locale>en_US</locale>
@@ -46,8 +46,17 @@
 
     <packages type="image">
         <package name="patterns-base-minimal_base"/>
-
         <package name="patterns-kde-kde_plasma"/>
+        <package name="openSUSE-build-key"/>       
+        <package name="branding-openSUSE"/>        
+        <package name="shadow-pw-mgmt"/>           
+        <package name="libcurl4"/>                 
+        <package name="libudev1"/>                 
+        <package name="krb5"/>                     
+        <package name="gettext-runtime"/>          
+        <package name="libglib-2_0-0"/>            
+        <package name="libgobject-2_0-0"/> 
+        <package name="libgio-2_0-0"/>        
 
         <package name="kernel-default"/>
         <package name="kernel-firmware-all"/>
@@ -83,7 +92,8 @@
 
         <package name="konsole"/>
         <package name="dolphin"/>
-        <package name="sddm-qt6"/> <package name="pipewire"/>
+        <package name="sddm-qt6"/>
+        <package name="pipewire"/>
         <package name="pipewire-alsa"/>
         <package name="pipewire-pulseaudio"/>
         <package name="wireplumber"/>
