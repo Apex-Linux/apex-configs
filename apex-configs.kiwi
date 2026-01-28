@@ -39,13 +39,18 @@
     </packages>
 
     <packages type="image">
-        <package name="gzip"/>
-        <package name="libudev1"/>
-        <package name="libcurl4"/>
-        <package name="glib2"/>
-        <package name="krb5"/>
-        <package name="shadow"/>
-
+        <package name="gzip"/>                          
+        <package name="libudev1"/>                      
+        <package name="libcurl4"/>                     
+        <package name="glib2"/>                        
+        <package name="krb5"/>                         
+        <package name="gettext-runtime"/>            
+        <package name="shadow"/>                       
+        <package name="NetworkManager-branding-upstream"/> 
+        <package name="dbus-broker-allow-restart"/>     
+        <package name="libXaw7"/>                       
+        <package name="mozilla-nss-certs"/>            
+        <package name="libavutil60"/>                   
         <package name="parted"/>
         <package name="dolly"/>
         <package name="dialog"/>
@@ -94,9 +99,9 @@
         
         <package name="konsole"/>
         <package name="dolphin"/>
-        <package name="kf6-breeze-icons"/> 
+        <package name="kf6-breeze-icons"/>
+        
         <package name="NetworkManager"/>
-        <package name="pipewire"/>
         <package name="pipewire-alsa"/>
         <package name="podman"/>
     </packages>
