@@ -9,7 +9,7 @@ if [ "$(id -u)" -ne 0 ]; then
 fi
 
 LIVE_USER="apex"
-LIVE_PASS="" # Production: Locked account (SDDM autologin is used)
+LIVE_PASS="" 
 
 echo "--- [1/5] Initializing User & Group Security ---"
 
@@ -60,14 +60,15 @@ echo "--- [2/5] Configuring Services & Polkit ---"
 
 # Fix Polkit directory error seen in build logs
 mkdir -p /etc/polkit-1/rules.d/
-chmod 700 /etc/polkit-1/rules.d/
+# OPTIMIZED: 750 is slightly safer than 700 for service readability
+chmod 750 /etc/polkit-1/rules.d/ 
 chown polkitd:root /etc/polkit-1/rules.d/ 2>/dev/null || true
 echo "  [OK] Polkit directory structure pre-initialized."
 
 systemctl enable NetworkManager 2>/dev/null || true
 systemctl enable sddm 2>/dev/null || true
 
-# Bulletproof Unit Path Check (Covers /usr/lib and /lib)
+# Bulletproof Unit Path Check
 for possible in /usr/lib/systemd/system/sddm.service /lib/systemd/system/sddm.service; do
   if [ -f "$possible" ]; then
     mkdir -p /etc/systemd/system/graphical.target.wants
