@@ -22,19 +22,19 @@ if systemctl list-unit-files | grep -q zramswap.service; then
     systemctl enable zramswap
 fi
 
-# --- 2. PERMISSIONS REPAIR (Critical Fix) ---
-# This fixes the "wrong owner/group" errors
+# --- 2. PERMISSIONS & SECURITY FIX (CRITICAL) ---
+# This retroactively fixes the "wrong owner/group" errors in the build log
 if [ -x /usr/bin/chkstat ]; then
-    echo "Running chkstat to fix system permissions..."
+    echo "Running chkstat to enforce system permissions..."
     chkstat --system
 fi
 
-# Fix Polkit Directory Permissions
+# Manually ensure Polkit directory exists to fix scriptlet errors
 mkdir -p /etc/polkit-1/rules.d/
 chmod 750 /etc/polkit-1/rules.d/
 chown polkitd:root /etc/polkit-1/rules.d/ 2>/dev/null || true
 
-# Regenerate Polkit privileges
+# Regenerate default privileges
 [ -x /usr/sbin/set_polkit_default_privs ] && /usr/sbin/set_polkit_default_privs
 
 # --- 3. User Setup ---
@@ -48,6 +48,7 @@ echo "root:linux" | chpasswd
 if ! id "$LIVE_USER" &>/dev/null; then
     useradd -m -s /bin/bash -c "Apex Live User" -G wheel,video,audio,users,render "$LIVE_USER"
     echo "$LIVE_USER:$LIVE_PASS" | chpasswd
+    # Grant sudo privileges
     echo "$LIVE_USER ALL=(ALL) NOPASSWD: ALL" > "/etc/sudoers.d/$LIVE_USER"
     chmod 0440 "/etc/sudoers.d/$LIVE_USER"
 fi
@@ -70,6 +71,7 @@ if [ -f /usr/lib/systemd/system/sddm.service ]; then
     ln -sf /usr/lib/systemd/system/sddm.service /etc/systemd/system/graphical.target.wants/sddm.service
 fi
 
+# Manually configure SDDM for Wayland
 mkdir -p /etc/sddm.conf.d
 SESSION_FILE=$(find /usr/share/wayland-sessions -name "*plasma*.desktop" | head -n1 || echo "plasma.desktop")
 SESSION_NAME=$(basename "$SESSION_FILE")
@@ -97,7 +99,7 @@ VARIANT="Live"
 HOME_URL="https://github.com/Apex-Linux"
 EOF
 
-# Fix capabilities for podman
+# Fix capabilities for podman (rootless containers)
 for bin in /usr/bin/newuidmap /usr/bin/newgidmap; do
     if [ -x "$bin" ]; then
         if command -v setcap >/dev/null 2>&1; then
@@ -108,7 +110,9 @@ for bin in /usr/bin/newuidmap /usr/bin/newgidmap; do
     fi
 done
 
+# Fix solver to allow recommended packages at runtime
 sed -i 's/^solver.onlyRequires.*/solver.onlyRequires = false/' /etc/zypp/zypp.conf
+
 systemctl set-default graphical.target
 [ -x /usr/bin/systemd-hwdb ] && systemd-hwdb update || true
 
