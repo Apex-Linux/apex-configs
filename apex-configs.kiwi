@@ -14,8 +14,6 @@
         <keytable>us</keytable>
         <timezone>UTC</timezone>
 
-        <solver-includes>recommends</solver-includes>
-
         <type image="iso"
               volid="APEX_LINUX"
               publisher="Apex Linux Team"
@@ -47,6 +45,11 @@
     </packages>
 
     <packages type="image">
+        <package name="update-alternatives"/>
+        <package name="fuse3"/>
+        <package name="Mesa-demo-x"/>
+        <package name="sysvinit-tools"/> 
+
         <package name="gzip"/>
         <package name="libudev1"/>
         <package name="libcurl4"/>
