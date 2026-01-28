@@ -50,8 +50,10 @@
     </packages>
 
     <packages type="image">
+        <package name="xdpyinfo"/>                 
+        <package name="xhost"/>                   
+        <package name="xauth"/>
         <package name="Mesa-demo-x"/>
-        
         <package name="sysvinit-tools"/>
         <package name="xdg-desktop-portal-kde"/>
         <package name="wayland-utils"/>
