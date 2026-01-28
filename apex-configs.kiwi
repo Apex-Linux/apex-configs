@@ -2,8 +2,8 @@
 <image schemaversion="8.3" name="Apex-Linux">
 
     <description type="system">
-        <author>ackerman & frost</author>
-        <contact>mdzunaid384@gmail.com & paponfkb@gmail.com</contact>
+        <author>ackerman</author>
+        <contact>mdzunaid384@gmail.com</contact>
         <specification>Apex Linux – Tumbleweed-based Distribution</specification>
     </description>
 
