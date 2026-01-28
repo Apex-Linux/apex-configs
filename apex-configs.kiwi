@@ -53,6 +53,7 @@
 
     <packages type="image">
         <package name="branding-upstream"/>      
+        <package name="NetworkManager-branding-upstream"/>
         <package name="gio-branding-upstream"/>  
         <package name="openSUSE-build-key"/>      
         <package name="chrony"/>               
