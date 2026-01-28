@@ -12,6 +12,10 @@ LIVE_USER="apex"
 LIVE_PASS="" # Production: Locked account (SDDM autologin is used)
 
 echo "--- [1/5] Initializing User & Group Security ---"
+
+# Ensure the shadow group exists for unix_chkpwd (fixes log warnings)
+getent group shadow >/dev/null || groupadd -r shadow
+
 ensure_group() {
     local g="$1"
     if getent group "$g" >/dev/null 2>&1; then
@@ -24,6 +28,10 @@ ensure_group() {
 for g in wheel video audio users render; do
     ensure_group "$g"
 done
+
+# --- Fix root account ---
+echo "root:linux" | chpasswd
+echo "  [OK] Root password set to 'linux'."
 
 if ! id "$LIVE_USER" &>/dev/null; then
     useradd -m -s /bin/bash -G wheel,video,audio,users,render "$LIVE_USER"
@@ -48,7 +56,14 @@ else
     echo "  [SKIP] User '$LIVE_USER' already exists."
 fi
 
-echo "--- [2/5] Configuring Services (Chroot Insurance) ---"
+echo "--- [2/5] Configuring Services & Polkit ---"
+
+# Fix Polkit directory error seen in build logs
+mkdir -p /etc/polkit-1/rules.d/
+chmod 700 /etc/polkit-1/rules.d/
+chown polkitd:root /etc/polkit-1/rules.d/ 2>/dev/null || true
+echo "  [OK] Polkit directory structure pre-initialized."
+
 systemctl enable NetworkManager 2>/dev/null || true
 systemctl enable sddm 2>/dev/null || true
 
@@ -115,12 +130,11 @@ done
 systemctl set-default graphical.target
 [ -x /usr/bin/systemd-hwdb ] && systemd-hwdb update || true
 
-# Safe Zypper optimization for faster repo handling
+# Safe Zypper optimization
 ZYPP_CONF="/etc/zypp/zypp.conf"
 if [ -f "$ZYPP_CONF" ]; then
-    grep -q '^solver.onlyRequires' "$ZYPP_CONF" && \
-    sed -i 's/^solver.onlyRequires.*/solver.onlyRequires = true/' "$ZYPP_CONF" || \
-    echo 'solver.onlyRequires = true' >> "$ZYPP_CONF"
+    sed -i 's/^# solver.onlyRequires.*/solver.onlyRequires = true/' "$ZYPP_CONF"
+    sed -i 's/^solver.onlyRequires.*/solver.onlyRequires = true/' "$ZYPP_CONF"
 fi
 
 echo "--- Apex Linux DNA Successfully Initialized! ---"
