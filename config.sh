@@ -2,8 +2,9 @@
 # Apex Linux Phase 4: Final Hardened & Self-Auditing Configuration
 set -euo pipefail
 
-# --- CRITICAL BOOT FIX [Wiki Section 7.8] ---
+# --- CRITICAL BOOT FIX (Do Not Remove) ---
 # Forces drivers needed for the Live ISO to boot correctly.
+# This prevents the "special device does not exist" error.
 echo 'add_drivers+=" overlay squashfs loop "' > /etc/dracut.conf.d/force-drivers.conf
 
 # --- Safety Check: Ensure Root ---
@@ -38,6 +39,7 @@ echo "root:linux" | chpasswd
 if ! id "$LIVE_USER" &>/dev/null; then
     useradd -m -s /bin/bash -G wheel,video,audio,users,render "$LIVE_USER"
     # CRITICAL CHANGE: Do not lock the account! Set a fallback password.
+    # This ensures you can login if the graphical boot fails.
     echo "$LIVE_USER:$LIVE_PASS" | chpasswd
     
     cat > /etc/sudoers.d/apex <<'EOF'
@@ -61,7 +63,7 @@ mkdir -p /etc/polkit-1/rules.d/
 chmod 750 /etc/polkit-1/rules.d/ 
 chown polkitd:root /etc/polkit-1/rules.d/ 2>/dev/null || true
 
-# Force regeneration of rules
+# Force regeneration of rules (Fixes the log error we saw earlier)
 if [ -x /usr/sbin/set_polkit_default_privs ]; then
     /usr/sbin/set_polkit_default_privs
     echo "  [FIX] Polkit default privileges regenerated."
@@ -71,7 +73,7 @@ fi
 systemctl enable NetworkManager 2>/dev/null || true
 systemctl enable sddm 2>/dev/null || true
 
-# Enable zRAM for better performance in Live Mode
+# Enable zRAM for better performance in Live Mode (Prevents freezing)
 if systemctl list-unit-files | grep -q zramswap.service; then
     systemctl enable zramswap
     echo "  [PERF] zRAM swap enabled."
