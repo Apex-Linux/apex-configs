@@ -1,14 +1,14 @@
 Name:       apex-release
 Version:    2026.1
-Release:    1%{?dist}
+Release:    2%{?dist}
 Summary:    Apex Linux Release Files & Repos
 License:    GPLv3
 URL:        https://github.com/Apex-Linux/apex-configs
 BuildArch:  noarch
 Requires:   fedora-repos
 
-Obsoletes:  fedora-release-identity-basic
-Obsoletes:  fedora-release-common
+Obsoletes:  fedora-release-identity-basic < 44
+Obsoletes:  fedora-release-common < 44
 Provides:   system-release(2026)
 Provides:   system-release-product
 
@@ -32,7 +32,7 @@ VERSION="2026"
 ID=apex
 ID_LIKE=fedora
 VERSION_ID=43
-PRETTY_NAME="Apex Linux 2026 (KDE)"
+PRETTY_NAME="Apex Linux (KDE)"
 ANSI_COLOR="0;36"
 CPE_NAME="cpe:/o:apex:linux:2026"
 HOME_URL="https://apexlinux.org"
@@ -55,5 +55,7 @@ EOF
 /etc/yum.repos.d/apex.repo
 
 %changelog
+* Fri Jan 30 2026 Apex Maintainer <dev@apexlinux.org> - 2026.1-2
+- Fixed unversioned obsoletes warning
 * Fri Jan 30 2026 Apex Maintainer <dev@apexlinux.org> - 2026.1-1
 - Initial release for Fedora 43
