@@ -1,5 +1,6 @@
 name: Build Apex Linux ISO
 
+
 on:
   workflow_dispatch:
     inputs:
@@ -19,7 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: fedora:${{ inputs.release_ver }}
-      options: --privileged 
+      options: --privileged
 
     steps:
       - name: Checkout Code
@@ -58,13 +59,16 @@ jobs:
           SF_PASS: ${{ secrets.SF_PASS }}
         run: |
           echo "Uploading ISO to SourceForge..."
+          # Fix: Auto-confirm host key and use mput for wildcards
           lftp -u "$SF_USER,$SF_PASS" sftp://frs.sourceforge.net <<-EOF
+          set sftp:auto-confirm yes
           mkdir -p /home/frs/project/apex-linux-distro/Daily-Builds
           cd /home/frs/project/apex-linux-distro/Daily-Builds
-          put ./Results/*.iso
+          mput ./Results/*.iso
           bye
           EOF
 
+      # === DEBUGGING ===
       - name: "DEBUG: Print program.log"
         if: failure()
         run: |
