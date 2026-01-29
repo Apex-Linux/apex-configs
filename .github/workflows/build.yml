@@ -1,11 +1,10 @@
 name: Build Apex Linux ISO
 
-
 on:
   workflow_dispatch:
     inputs:
       release_ver:
-        description: 'Apex Release Version'
+        description: 'Fedora Release Version'
         required: true
         default: '43'
         type: string
@@ -14,7 +13,6 @@ on:
         required: true
         default: 'iso/kickstarts/apex-kde.ks'
         type: string
-
 
 permissions:
   contents: write
@@ -36,15 +34,15 @@ jobs:
       - name: Lint Kickstart Syntax
         run: ksvalidator "${{ inputs.kickstart_path }}"
 
+
+      - name: Generate Date Variable
+        run: echo "DATE=$(date +%F)" >> $GITHUB_ENV
+
       - name: Build Apex Linux ISO
         run: |
-          # 1. Fix Git permissions inside container
           git config --global --add safe.directory "*"
-          
-          # 2. Cleanup
           rm -rf ./Results
           
-          # 3. The Build Command (Nobara Style)
           livemedia-creator \
             --ks "${{ inputs.kickstart_path }}" \
             --no-virt \
@@ -58,7 +56,7 @@ jobs:
 
       - name: Verify ISO Size
         run: |
-          echo "Checking if ISO fits GitHub limits (Max 2GB)..."
+          echo "Checking ISO size..."
           ls -lh ./Results/*.iso
           du -h ./Results/*.iso
 
@@ -72,7 +70,7 @@ jobs:
             ### Apex Linux Daily Build
             - **Base:** Fedora ${{ inputs.release_ver }}
             - **Desktop:** KDE Plasma Minimal
-            - **Date:** $(date +%F)
+            - **Date:** ${{ env.DATE }} 
           files: ./Results/*.iso
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
