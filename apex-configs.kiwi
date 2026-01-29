@@ -31,6 +31,7 @@
     </repository>
 
     <packages type="bootstrap">
+        <package name="polkit"/>
         <package name="shadow-pw-mgmt"/>           
         <package name="openSUSE-release"/>
         <package name="filesystem"/>
@@ -127,7 +128,6 @@
         <package name="curl"/>
         <package name="openssh-clients"/>
         <package name="sudo"/>
-        <package name="polkit"/> 
         <package name="polkit-default-privs"/>
         <package name="wget"/>
         <package name="konsole"/>
