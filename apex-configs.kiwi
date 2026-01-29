@@ -61,8 +61,7 @@
         <package name="kf6-kdbusaddons"/>
         <package name="libQt6DBus6"/>
         <package name="xdg-desktop-portal-kde"/>  
-        <package name="xdg-desktop-portal"/>      
-        <package name="dbus-1-x11"/>              
+        <package name="xdg-desktop-portal"/>          
         <package name="vulkan-tools"/>    
         <package name="libGLU1"/>
         <package name="pciutils"/>              
@@ -80,7 +79,6 @@
         <package name="openSUSE-build-key"/>      
         <package name="chrony"/>               
         <package name="chrony-pool-openSUSE"/>     
-        <package name="dbus-broker-allow-restart"/>
         <package name="mozilla-nss-certs"/>     
         <package name="libcurl4"/>                 
         <package name="libudev1"/>                 
