@@ -1,0 +1,85 @@
+name: Build Apex Linux ISO
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_ver:
+        description: 'Apex Release Version'
+        required: true
+        default: '43'
+        type: string
+      kickstart_path:
+        description: 'Path to kickstart file'
+        required: true
+        default: 'iso/kickstarts/apex-kde.ks'
+        type: string
+
+jobs:
+  build-iso:
+    runs-on: ubuntu-latest
+    container:
+      image: fedora:${{ inputs.release_ver }}
+      options: --privileged # Required for loop mounting
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install Build Dependencies
+        # Added 'lftp' for SourceForge upload and 'git' for versioning
+        run: |
+          dnf install -y lorax lorax-lmc-novirt anaconda pykickstart lftp git wget
+
+      - name: Lint Kickstart Syntax
+        run: ksvalidator "${{ inputs.kickstart_path }}"
+
+      - name: Build Apex Linux ISO
+        run: |
+          # Safe directory fix for git inside container
+          git config --global --add safe.directory "*"
+          
+          mkdir -p ./Results
+          
+          # The Build Command
+          livemedia-creator \
+            --ks "${{ inputs.kickstart_path }}" \
+            --no-virt \
+            --make-iso \
+            --iso-only \
+            --project "Apex Linux" \
+            --volid "Apex-KDE-${{ inputs.release_ver }}" \
+            --iso-name "Apex-Linux-KDE-${{ inputs.release_ver }}-$(date +%Y%m%d).iso" \
+            --releasever "${{ inputs.release_ver }}" \
+            --resultdir ./Results
+
+      - name: Upload to SourceForge
+        env:
+          SF_USER: ${{ secrets.SF_USER }}
+          SF_PASS: ${{ secrets.SF_PASS }}
+        run: |
+          echo "Uploading ISO to SourceForge..."
+          lftp -u "$SF_USER,$SF_PASS" sftp://frs.sourceforge.net <<-EOF
+          mkdir -p /home/frs/project/apex-linux-distro/Daily-Builds
+          cd /home/frs/project/apex-linux-distro/Daily-Builds
+          put ./Results/*.iso
+          bye
+          EOF
+
+      # === DEBUGGING: If build fails, show us why ===
+      - name: "DEBUG: Print program.log"
+        if: failure()
+        run: |
+          if [ -f ./program.log ]; then
+            cat ./program.log
+          else
+            echo "program.log not found"
+          fi
+
+      - name: "DEBUG: Print livemedia.log"
+        if: failure()
+        run: |
+          if [ -f ./livemedia.log ]; then
+            cat ./livemedia.log
+          else
+            echo "livemedia.log not found"
+          fi
