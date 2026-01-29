@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-# Apex Linux - Distribution Configuration Script
 # Target: OpenSUSE Tumbleweed Base (Plasma 6)
 
 set -euo pipefail
@@ -15,22 +14,19 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-# Configure dracut for the live environment
+# Ensure dracut is configured for the live environment
 echo 'add_drivers+=" overlay squashfs loop dm-mod "' > /etc/dracut.conf.d/10-apex-live.conf
 
-# Enable zram if the service is present
+# Enable zram if present
 if systemctl list-unit-files | grep -q zramswap.service; then
     systemctl enable zramswap
 fi
 
 # --- 2. PERMISSIONS & POLKIT REPAIR ---
-# Ensure Polkit directory exists and has correct permissions
 mkdir -p /etc/polkit-1/rules.d/
 chmod 750 /etc/polkit-1/rules.d/
 chown polkitd:root /etc/polkit-1/rules.d/ 2>/dev/null || true
 
-# THE ROOT FIX: Correct "wrong owner/group" warnings for system binaries
-# This ensures unix_chkpwd is root:shadow so login doesn't fail.
 if [ -x /usr/bin/chkstat ]; then
     echo "Running chkstat to fix system permissions..."
     chkstat --system
@@ -42,12 +38,11 @@ if [ -x /usr/sbin/set_polkit_default_privs ]; then
 fi
 
 # --- 3. User & Root Setup ---
-# Ensure essential groups exist for the live user
 for group in wheel video audio users render shadow; do
     getent group "$group" >/dev/null 2>&1 || groupadd -r "$group"
 done
 
-# Set root password (Backbone authentication fix)
+# Set root password
 echo "root:linux" | chpasswd
 
 # Create the Apex Live User
@@ -59,14 +54,14 @@ if ! id "$LIVE_USER" &>/dev/null; then
 fi
 
 # --- 4. Desktop Finalization (THE BLACK SCREEN FIX) ---
-# FIX: Use --force to overwrite legacy symlinks and ensure SDDM loads
 systemctl set-default graphical.target
 systemctl enable NetworkManager
 systemctl enable --force sddm
 
 # Configure SDDM autologin for Plasma 6 (Wayland)
 mkdir -p /etc/sddm.conf.d
-SESSION_FILE=$(find /usr/share/wayland-sessions -name "*plasma*.desktop" | head -n1 || echo "plasma-wayland.desktop")
+
+SESSION_FILE=$(find /usr/share/wayland-sessions -name "*plasma*.desktop" | head -n1 || echo "plasma.desktop")
 SESSION_NAME=$(basename "$SESSION_FILE" .desktop)
 
 cat > /etc/sddm.conf.d/autologin.conf << EOF
@@ -93,14 +88,12 @@ VARIANT="Live"
 HOME_URL="https://github.com/Apex-Linux"
 EOF
 
-# --- 6. Security & Capabilities ---
-# CAPABILITY FIX: Manually apply caps to fix Podman/Rootless warnings in logs
+# --- 6. Security & Capabilities---
 if command -v setcap >/dev/null 2>&1; then
-    echo "Applying file capabilities to newuidmap and newgidmap..."
+    echo "Applying file capabilities..."
     setcap cap_setuid+ep /usr/bin/newuidmap
     setcap cap_setgid+ep /usr/bin/newgidmap
 else
-    # Fallback to SUID if setcap is missing
     chmod 4755 /usr/bin/newuidmap /usr/bin/newgidmap
 fi
 
