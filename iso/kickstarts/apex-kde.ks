@@ -23,9 +23,9 @@ repo --name=updates --mirrorlist=https://mirrors.fedoraproject.org/metalink?repo
 # Apex Linux Core (Your Branding)
 repo --name=apex-core --baseurl=https://download.copr.fedorainfracloud.org/results/ackerman/apex-core/fedora-43-$basearch/
 
-# === 3. PACKAGE SELECTION (THE DIET) ===
+# === 3. PACKAGE SELECTION ===
 %packages
-# Core Hardware Support
+# Core Hardware & Boot
 @core
 @hardware-support
 kernel
@@ -34,6 +34,17 @@ linux-firmware
 grub2-efi-x64
 shim-x64
 efibootmgr
+
+# --- CRITICAL LIVE SYSTEM TOOLS ---
+dracut-live
+livesys-scripts
+anaconda
+anaconda-install-env-deps
+anaconda-live
+
+# --- SECURITY ---
+selinux-policy
+selinux-policy-targeted
 
 # Your Identity
 apex-release
@@ -61,11 +72,8 @@ wireplumber
 
 # The Installer
 calamares
-anaconda-tools
-lorax
-livecd-tools
 
-# Essential Tools (No Bloat)
+# Essential Tools
 git
 wget
 nano
@@ -76,7 +84,7 @@ unzip
 tar
 xz
 
-# REMOVED BLOAT (Explicitly banned)
+# REMOVED BLOAT
 -libreoffice-*
 -thunderbird
 -firefox*
@@ -95,12 +103,12 @@ xz
 
 # === 4. POST-INSTALL CONFIGURATION ===
 %post
-# Create Live User (No Password)
+# Create Live User
 useradd -m -c "Live System User" liveuser
 passwd -d liveuser > /dev/null
 usermod -aG wheel liveuser
 
-# Enable SDDM Autologin (Boot straight to desktop)
+# Enable SDDM Autologin
 mkdir -p /etc/sddm.conf.d
 cat > /etc/sddm.conf.d/autologin.conf << EOF
 [Autologin]
