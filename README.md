@@ -1,2 +1,2 @@
-# apex-configs
-Configuration files and KIWI templates for Apex Linux (Tumbleweed-based).
+# Apex Linux (Fedora 43 Base)
+Master configuration repository for Apex Linux.
