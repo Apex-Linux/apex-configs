@@ -19,14 +19,13 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: fedora:${{ inputs.release_ver }}
-      options: --privileged # Required for loop mounting
+      options: --privileged 
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
       - name: Install Build Dependencies
-        # Added 'lftp' for SourceForge upload and 'git' for versioning
         run: |
           dnf install -y lorax lorax-lmc-novirt anaconda pykickstart lftp git wget
 
@@ -38,7 +37,8 @@ jobs:
           # Safe directory fix for git inside container
           git config --global --add safe.directory "*"
           
-          mkdir -p ./Results
+          # FIX: Ensure the directory does NOT exist, or livemedia-creator crashes
+          rm -rf ./Results
           
           # The Build Command
           livemedia-creator \
@@ -65,7 +65,6 @@ jobs:
           bye
           EOF
 
-      # === DEBUGGING: If build fails, show us why ===
       - name: "DEBUG: Print program.log"
         if: failure()
         run: |
