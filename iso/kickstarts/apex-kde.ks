@@ -1,4 +1,4 @@
-# Apex Linux KDE - Minimal Edition (Final Version)
+# Apex Linux KDE - Minimal Edition 
 # Base: Fedora 43
 # Version: 2026.1
 
@@ -12,13 +12,13 @@ xconfig --startxonboot
 zerombr
 clearpart --all --initlabel
 
-# FIX 1: Partition Size (Required for build to start)
+# FIX 1: Partition Size
 part / --size 8192 --fstype ext4
 
-# FIX 2: Root Password (Required for installer to finish)
+# FIX 2: Root Password
 rootpw --lock --iscrypted locked
 
-# FIX 3: Services (Disable SSH for security)
+# FIX 3: Services
 services --enabled=NetworkManager,ModemManager --disabled=sshd
 
 # Shutdown after build
@@ -75,6 +75,7 @@ kate
 # Networking & Audio
 NetworkManager
 NetworkManager-wifi
+ModemManager
 plasma-nm
 pipewire
 pipewire-alsa
@@ -93,7 +94,7 @@ btop
 unzip
 tar
 xz
-fastfetch  # <--- REPLACED neofetch
+fastfetch
 
 # REMOVED BLOAT
 -libreoffice-*
@@ -116,8 +117,6 @@ fastfetch  # <--- REPLACED neofetch
 %post
 # --- 1. SETUP FASTFETCH CUSTOM LOGO ---
 mkdir -p /usr/share/apex-linux
-
-# Create the ASCII Art File
 cat > /usr/share/apex-linux/logo.txt << 'ASCII_EOF'
       / \
      /   \      APEX LINUX
@@ -127,7 +126,6 @@ cat > /usr/share/apex-linux/logo.txt << 'ASCII_EOF'
  /___________\
 ASCII_EOF
 
-# Create default config for new users
 mkdir -p /etc/skel/.config/fastfetch
 cat > /etc/skel/.config/fastfetch/config.jsonc << 'JSON_EOF'
 {
@@ -157,10 +155,13 @@ Session=plasma.desktop
 Relogin=false
 EOF
 
-# Put "Install Apex Linux" on the Desktop
+# --- 3. CALAMARES SETUP (This ensures the installer appears) ---
 mkdir -p /home/liveuser/Desktop
+# Copy the launcher to the desktop
 cp /usr/share/applications/calamares.desktop /home/liveuser/Desktop/install-apex.desktop
+# Make it executable so it can run
 chmod +x /home/liveuser/Desktop/install-apex.desktop
+# Give it to the user
 chown -R liveuser:liveuser /home/liveuser/Desktop
 
 # Enable Services
