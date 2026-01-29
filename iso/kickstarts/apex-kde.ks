@@ -1,4 +1,4 @@
-# Apex Linux KDE - Minimal Edition (Partition Fixed)
+# Apex Linux KDE - Minimal Edition (Final Version)
 # Base: Fedora 43
 # Version: 2026.1
 
@@ -12,16 +12,25 @@ xconfig --startxonboot
 zerombr
 clearpart --all --initlabel
 
-# FIX: Define the virtual disk size (8GB) for the build process
+# FIX 1: Partition Size (Required for build to start)
 part / --size 8192 --fstype ext4
 
-# === 2. NETWORK & INSTALLATION SOURCE ===
+# FIX 2: Root Password (Required for installer to finish)
+rootpw --lock --iscrypted locked
+
+# FIX 3: Services (Disable SSH for security)
+services --enabled=NetworkManager,ModemManager --disabled=sshd
+
+# Shutdown after build
+shutdown
+
+# === 2. NETWORK & REPOS ===
 network --bootproto=dhcp --device=link --activate
 
-# Installation Source (Core Fedora)
+# Installation Source
 url --mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=fedora-43&arch=$basearch
 
-# Additional Repos
+# Repositories
 repo --name=updates --mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=updates-released-f43&arch=$basearch
 repo --name=apex-core --baseurl=https://download.copr.fedorainfracloud.org/results/ackerman/apex-core/fedora-43-$basearch/
 
@@ -80,11 +89,11 @@ git
 wget
 nano
 htop
-neofetch
 btop
 unzip
 tar
 xz
+fastfetch  # <--- REPLACED neofetch
 
 # REMOVED BLOAT
 -libreoffice-*
@@ -105,6 +114,35 @@ xz
 
 # === 4. POST-INSTALL CONFIGURATION ===
 %post
+# --- 1. SETUP FASTFETCH CUSTOM LOGO ---
+mkdir -p /usr/share/apex-linux
+
+# Create the ASCII Art File
+cat > /usr/share/apex-linux/logo.txt << 'ASCII_EOF'
+      / \
+     /   \      APEX LINUX
+    /  ^  \     ----------
+   /  / \  \    2026.1
+  /  /___\  \
+ /___________\
+ASCII_EOF
+
+# Create default config for new users
+mkdir -p /etc/skel/.config/fastfetch
+cat > /etc/skel/.config/fastfetch/config.jsonc << 'JSON_EOF'
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "source": "/usr/share/apex-linux/logo.txt",
+    "padding": { "top": 1, "left": 2 }
+  },
+  "modules": [
+    "title", "separator", "os", "host", "kernel", "uptime", "packages", "shell", "de", "wm", "cpu", "memory", "disk", "colors"
+  ]
+}
+JSON_EOF
+
+# --- 2. USER & SYSTEM SETUP ---
 # Create Live User
 useradd -m -c "Live System User" liveuser
 passwd -d liveuser > /dev/null
