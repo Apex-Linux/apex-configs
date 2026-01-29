@@ -1,4 +1,4 @@
-# Apex Linux KDE - Minimal Edition
+# Apex Linux KDE - Minimal Edition (Fixed URL)
 # Base: Fedora 43
 # Version: 2026.1
 
@@ -13,14 +13,14 @@ zerombr
 clearpart --all --initlabel
 autopart --type=plain --fstype=ext4 --nohome
 
-# === 2. NETWORK & REPOS ===
+# === 2. NETWORK & INSTALLATION SOURCE (FIXED) ===
 network --bootproto=dhcp --device=link --activate
 
-# Official Fedora Repos
-repo --name=fedora --mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=fedora-43&arch=$basearch
-repo --name=updates --mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=updates-released-f43&arch=$basearch
+# FIX: This tells the installer where to download the core OS from
+url --mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=fedora-43&arch=$basearch
 
-# Apex Linux Core (Your Branding)
+# Additional Repos (Updates & Branding)
+repo --name=updates --mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=updates-released-f43&arch=$basearch
 repo --name=apex-core --baseurl=https://download.copr.fedorainfracloud.org/results/ackerman/apex-core/fedora-43-$basearch/
 
 # === 3. PACKAGE SELECTION ===
@@ -35,14 +35,14 @@ grub2-efi-x64
 shim-x64
 efibootmgr
 
-# --- CRITICAL LIVE SYSTEM TOOLS ---
+# Live System Tools
 dracut-live
 livesys-scripts
 anaconda
 anaconda-install-env-deps
 anaconda-live
 
-# --- SECURITY ---
+# Security
 selinux-policy
 selinux-policy-targeted
 
