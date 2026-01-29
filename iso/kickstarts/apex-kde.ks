@@ -1,4 +1,4 @@
-# Apex Linux KDE - Minimal Edition (Fixed URL)
+# Apex Linux KDE - Minimal Edition (Partition Fixed)
 # Base: Fedora 43
 # Version: 2026.1
 
@@ -11,21 +11,23 @@ firewall --enabled --service=mdns
 xconfig --startxonboot
 zerombr
 clearpart --all --initlabel
-autopart --type=plain --fstype=ext4 --nohome
 
-# === 2. NETWORK & INSTALLATION SOURCE (FIXED) ===
+# FIX: Define the virtual disk size (8GB) for the build process
+part / --size 8192 --fstype ext4
+
+# === 2. NETWORK & INSTALLATION SOURCE ===
 network --bootproto=dhcp --device=link --activate
 
-# FIX: This tells the installer where to download the core OS from
+# Installation Source (Core Fedora)
 url --mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=fedora-43&arch=$basearch
 
-# Additional Repos (Updates & Branding)
+# Additional Repos
 repo --name=updates --mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=updates-released-f43&arch=$basearch
 repo --name=apex-core --baseurl=https://download.copr.fedorainfracloud.org/results/ackerman/apex-core/fedora-43-$basearch/
 
 # === 3. PACKAGE SELECTION ===
 %packages
-# Core Hardware & Boot
+# Core Hardware
 @core
 @hardware-support
 kernel
