@@ -24,29 +24,30 @@ if systemctl list-unit-files | grep -q zramswap.service; then
 fi
 
 # --- 2. PERMISSIONS & POLKIT REPAIR ---
-# FIX: Pre-create Polkit directory to avoid scriptlet failures found in log
+# Ensure Polkit directory exists and has correct permissions
 mkdir -p /etc/polkit-1/rules.d/
 chmod 750 /etc/polkit-1/rules.d/
 chown polkitd:root /etc/polkit-1/rules.d/ 2>/dev/null || true
 
-# Fix "wrong owner/group" warnings for system binaries (e.g., unix_chkpwd)
+# THE ROOT FIX: Correct "wrong owner/group" warnings for system binaries
+# This ensures unix_chkpwd is root:shadow so login doesn't fail.
 if [ -x /usr/bin/chkstat ]; then
     echo "Running chkstat to fix system permissions..."
     chkstat --system
 fi
 
-# Regenerate Polkit privileges to ensure sudo/polkit work on first boot
+# Regenerate Polkit privileges to ensure sudo/auth work on first boot
 if [ -x /usr/sbin/set_polkit_default_privs ]; then
     /usr/sbin/set_polkit_default_privs
 fi
 
-# --- 3. User Setup ---
+# --- 3. User & Root Setup ---
 # Ensure essential groups exist for the live user
 for group in wheel video audio users render shadow; do
     getent group "$group" >/dev/null 2>&1 || groupadd -r "$group"
 done
 
-# Set root password
+# Set root password (Backbone authentication fix)
 echo "root:linux" | chpasswd
 
 # Create the Apex Live User
@@ -57,19 +58,16 @@ if ! id "$LIVE_USER" &>/dev/null; then
     chmod 0440 "/etc/sudoers.d/$LIVE_USER"
 fi
 
-# --- 4. REPO CONFIGURATION (STAY REMOVED) ---
-# DO NOT add zypper ar/ref here. OBS has no network access.
-# Repositories are already handled by the .kiwi file.
-
-# --- 5. Desktop Finalization ---
-# FIX: Use --force to overwrite the existing display-manager symlink that caused the crash
+# --- 4. Desktop Finalization (THE BLACK SCREEN FIX) ---
+# FIX: Use --force to overwrite legacy symlinks and ensure SDDM loads
+systemctl set-default graphical.target
 systemctl enable NetworkManager
 systemctl enable --force sddm
 
 # Configure SDDM autologin for Plasma 6 (Wayland)
 mkdir -p /etc/sddm.conf.d
-SESSION_FILE=$(find /usr/share/wayland-sessions -name "*plasma*.desktop" | head -n1 || echo "plasma.desktop")
-SESSION_NAME=$(basename "$SESSION_FILE")
+SESSION_FILE=$(find /usr/share/wayland-sessions -name "*plasma*.desktop" | head -n1 || echo "plasma-wayland.desktop")
+SESSION_NAME=$(basename "$SESSION_FILE" .desktop)
 
 cat > /etc/sddm.conf.d/autologin.conf << EOF
 [General]
@@ -82,7 +80,7 @@ Session=${SESSION_NAME}
 Relogin=false
 EOF
 
-# Branding & Hostname configuration
+# --- 5. Identity & Branding ---
 echo "$HOSTNAME" > /etc/hostname
 
 cat > /etc/os-release << EOF
@@ -96,19 +94,17 @@ HOME_URL="https://github.com/Apex-Linux"
 EOF
 
 # --- 6. Security & Capabilities ---
-# Fix capabilities for rootless tools found in log warnings
-for bin in /usr/bin/newuidmap /usr/bin/newgidmap; do
-    if [ -x "$bin" ]; then
-        if command -v setcap >/dev/null 2>&1; then
-            [[ "$bin" == *newuidmap ]] && setcap cap_setuid+ep "$bin" || setcap cap_setgid+ep "$bin"
-        else
-            chmod 4755 "$bin"
-        fi
-    fi
-done
+# CAPABILITY FIX: Manually apply caps to fix Podman/Rootless warnings in logs
+if command -v setcap >/dev/null 2>&1; then
+    echo "Applying file capabilities to newuidmap and newgidmap..."
+    setcap cap_setuid+ep /usr/bin/newuidmap
+    setcap cap_setgid+ep /usr/bin/newgidmap
+else
+    # Fallback to SUID if setcap is missing
+    chmod 4755 /usr/bin/newuidmap /usr/bin/newgidmap
+fi
 
-# Set default boot target and update databases
-systemctl set-default graphical.target
+# Update system databases
 sed -i 's/^solver.onlyRequires.*/solver.onlyRequires = false/' /etc/zypp/zypp.conf
 [ -x /usr/bin/systemd-hwdb ] && systemd-hwdb update || true
 
