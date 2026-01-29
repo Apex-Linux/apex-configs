@@ -44,8 +44,8 @@
         <package name="shadow"/>       
         <package name="diffutils"/>
         <package name="libpwquality1"/>
-        
-        <package name="xz"/>                       <package name="grep"/>                     
+        <package name="xz"/>                       
+        <package name="grep"/>                     
         <package name="sed"/>
         <package name="tar"/>
         <package name="gzip"/>
@@ -53,6 +53,9 @@
     </packages>
 
     <packages type="image">
+        <package name="xdg-desktop-portal-kde"/>  
+        <package name="xdg-desktop-portal"/>      
+        <package name="dbus-1-x11"/>              
         <package name="vulkan-tools"/>    
         <package name="libGLU1"/>
         <package name="pciutils"/>              
@@ -83,7 +86,6 @@
         <package name="libgio-2_0-0"/>
         <package name="libgmodule-2_0-0"/>
         <package name="libgomp1"/>
-
         <package name="libavutil60"/>
         <package name="libavcodec62"/>
         <package name="libswscale9"/>
@@ -122,7 +124,6 @@
         <package name="xorriso"/>
         <package name="cryptsetup"/>
         <package name="lvm2"/>
-
         <package name="NetworkManager"/>
         <package name="iproute2"/>
         <package name="curl"/>
