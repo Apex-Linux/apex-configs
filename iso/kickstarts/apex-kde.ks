@@ -45,6 +45,8 @@ linux-firmware
 grub2-efi-x64
 shim-x64
 efibootmgr
+grub2-efi-x64-cdboot
+syslinux
 
 # Live System Tools
 dracut-live
@@ -71,6 +73,8 @@ dolphin
 ark
 spectacle
 kate
+gwenview
+polkit-kde
 
 # Networking & Audio
 NetworkManager
@@ -95,6 +99,11 @@ unzip
 tar
 xz
 fastfetch
+ntfs-3g
+ntfs-3g-system-compression
+exfatprogs
+dosfstools
+fuse
 
 # REMOVED BLOAT
 -libreoffice-*
@@ -105,7 +114,6 @@ fastfetch
 -akregator
 -dragon
 -elisa
--gwenview
 -okular
 -kmines
 -kmahjongg
