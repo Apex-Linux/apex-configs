@@ -32,6 +32,7 @@
 
     <packages type="bootstrap">
         <package name="polkit"/>
+        <package name="dbus-1"/>
         <package name="shadow-pw-mgmt"/>           
         <package name="openSUSE-release"/>
         <package name="filesystem"/>
@@ -53,6 +54,12 @@
     </packages>
 
     <packages type="image">
+        <package name="dbus-broker"/>
+        <package name="dbus-broker-allow-restart"/>
+        <package name="dbus-1-common"/>
+        <package name="dbus-1-tools"/>
+        <package name="kf6-kdbusaddons"/>
+        <package name="libQt6DBus6"/>
         <package name="xdg-desktop-portal-kde"/>  
         <package name="xdg-desktop-portal"/>      
         <package name="dbus-1-x11"/>              
