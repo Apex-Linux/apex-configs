@@ -1,10 +1,11 @@
 name: Build Apex Linux ISO
 
+
 on:
   workflow_dispatch:
     inputs:
       release_ver:
-        description: 'Fedora Release Version'
+        description: 'Apex Release Version'
         required: true
         default: '43'
         type: string
@@ -33,7 +34,6 @@ jobs:
 
       - name: Lint Kickstart Syntax
         run: ksvalidator "${{ inputs.kickstart_path }}"
-
 
       - name: Generate Date Variable
         run: echo "DATE=$(date +%F)" >> $GITHUB_ENV
@@ -64,13 +64,23 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: success()
         with:
-          tag_name: Daily-Build-${{ github.run_number }}
-          name: Apex Linux Build ${{ github.run_number }}
+          # Internal Tag: Looks like a version number (v2026.1.12)
+          tag_name: v2026.1.${{ github.run_number }}
+          
+          # Public Title: "Apex Linux 2026-01-30"
+          name: Apex Linux ${{ env.DATE }}
+          
+          # Pro Description
           body: |
-            ### Apex Linux Daily Build
-            - **Base:** Fedora ${{ inputs.release_ver }}
-            - **Desktop:** KDE Plasma Minimal
-            - **Date:** ${{ env.DATE }} 
+            ## Apex Linux
+            **The Minimal KDE Experience.**
+            
+            - **Version:** 2026.1 (Build ${{ github.run_number }})
+            - **Base:** Fedora ${{ inputs.release_ver }} (Bleeding Edge)
+            - **Desktop:** KDE Plasma 6
+            - **Kernel:** Latest 6.x
+            
+            *Clean. Fast. Apex.*
           files: ./Results/*.iso
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
