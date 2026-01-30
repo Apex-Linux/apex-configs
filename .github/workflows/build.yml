@@ -64,13 +64,13 @@ jobs:
         uses: softprops/action-gh-release@v1
         if: success()
         with:
-          # Internal Tag: Looks like a version number (v2026.1.12)
+
           tag_name: v2026.1.${{ github.run_number }}
           
-          # Public Title: "Apex Linux 2026-01-30"
+
           name: Apex Linux ${{ env.DATE }}
           
-          # Pro Description
+
           body: |
             ## Apex Linux
             **The Minimal KDE Experience.**
@@ -85,7 +85,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # === DEBUGGING ===
+
       - name: "DEBUG: Print program.log"
         if: failure() && hashFiles('./program.log') != ''
         run: cat ./program.log

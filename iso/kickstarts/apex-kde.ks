@@ -123,36 +123,39 @@ fuse
 
 # === 4. POST-INSTALL CONFIGURATION ===
 %post
-# --- 1. SETUP FASTFETCH CUSTOM LOGO ---
+
+# --- 1. DOWNLOAD SYSTEM BRANDING (Terminal) ---
 mkdir -p /usr/share/apex-linux
-cat > /usr/share/apex-linux/logo.txt << 'ASCII_EOF'
-      / \
-     /   \      APEX LINUX
-    /  ^  \     ----------
-   /  / \  \    2026.1
-  /  /___\  \
- /___________\
-ASCII_EOF
+# Download Logo (Passive Asset)
+wget https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/logo.txt -O /usr/share/apex-linux/logo.txt
 
-mkdir -p /etc/skel/.config/fastfetch
-cat > /etc/skel/.config/fastfetch/config.jsonc << 'JSON_EOF'
-{
-  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
-  "logo": {
-    "source": "/usr/share/apex-linux/logo.txt",
-    "padding": { "top": 1, "left": 2 }
-  },
-  "modules": [
-    "title", "separator", "os", "host", "kernel", "uptime", "packages", "shell", "de", "wm", "cpu", "memory", "disk", "colors"
-  ]
-}
-JSON_EOF
+# --- 2. CALAMARES BRANDING (The Transplant) ---
+# Create the specific folder Calamares looks for
+mkdir -p /usr/share/calamares/branding/apex
 
-# --- 2. USER & SYSTEM SETUP ---
+# Download the 3 Critical Assets from your Repo
+wget https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/calamares/branding.desc -O /usr/share/calamares/branding/apex/branding.desc
+wget https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/calamares/squid.png -O /usr/share/calamares/branding/apex/squid.png
+wget https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/calamares/welcome.png -O /usr/share/calamares/branding/apex/welcome.png
+
+# FORCE Calamares to use 'apex' branding instead of 'default' or 'fedora'
+# This command edits the settings file directly
+sed -i 's/branding: default/branding: apex/' /etc/calamares/settings.conf
+sed -i 's/branding: fedora/branding: apex/' /etc/calamares/settings.conf
+
+# --- 3. SYSTEM IDENTITY (Change OS Name) ---
+sed -i 's/^NAME=.*$/NAME="Apex Linux"/' /etc/os-release
+sed -i 's/^PRETTY_NAME=.*$/PRETTY_NAME="Apex Linux 2026.1"/' /etc/os-release
+
+# --- 4. USER & PERMISSIONS SETUP ---
 # Create Live User
 useradd -m -c "Live System User" liveuser
 passwd -d liveuser > /dev/null
 usermod -aG wheel liveuser
+
+# FIX: Grant 'wheel' group passwordless sudo (Required for Calamares)
+echo "%wheel ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/wheel
+chmod 0440 /etc/sudoers.d/wheel
 
 # Enable SDDM Autologin
 mkdir -p /etc/sddm.conf.d
@@ -163,13 +166,14 @@ Session=plasma.desktop
 Relogin=false
 EOF
 
-# --- 3. CALAMARES SETUP (This ensures the installer appears) ---
+# --- 5. CALAMARES LAUNCHER SETUP ---
 mkdir -p /home/liveuser/Desktop
-# Copy the launcher to the desktop
+
+# Copy the launcher
 cp /usr/share/applications/calamares.desktop /home/liveuser/Desktop/install-apex.desktop
-# Make it executable so it can run
+
+# Fix Permissions so it is trusted and executable
 chmod +x /home/liveuser/Desktop/install-apex.desktop
-# Give it to the user
 chown -R liveuser:liveuser /home/liveuser/Desktop
 
 # Enable Services

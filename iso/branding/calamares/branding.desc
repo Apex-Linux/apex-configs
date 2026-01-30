@@ -1,0 +1,32 @@
+---
+componentName:   apex
+welcomeStyleCalamares:   true
+welcomeExpandingLogo:   true
+windowExpanding:    normal
+windowSize: 800px,520px
+windowPlacement: center
+
+strings:
+    productName:         "Apex Linux"
+    shortProductName:    "Apex"
+    version:             "2026.1"
+    shortVersion:        "2026.1"
+    versionedName:       "Apex Linux 2026.1"
+    shortVersionedName:  "Apex 2026"
+    bootloaderEntryName: "Apex Linux"
+    productUrl:          "https://github.com/Apex-Linux"
+    supportUrl:          "https://github.com/Apex-Linux"
+    knownIssuesUrl:      "https://github.com/Apex-Linux"
+    releaseNotesUrl:     "https://github.com/Apex-Linux"
+
+images:
+    productLogo:         "squid.png"
+    productIcon:         "squid.png"
+    productWelcome:      "welcome.png"
+
+
+style:
+   sidebarBackground:    "#292f34"
+   sidebarText:          "#FFFFFF"
+   sidebarTextSelect:    "#292f34"
+   sidebarTextHighlight: "#00BFFF"
