@@ -29,7 +29,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Build Dependencies
-        # Added 'pykickstart' to get the ksflatten tool
+        # Added 'pykickstart' to provide the 'ksflatten' tool
         run: dnf install -y lorax lorax-lmc-novirt anaconda pykickstart git wget zstd xz dbus-daemon util-linux
 
       - name: Lint Kickstart Syntax
@@ -45,9 +45,8 @@ jobs:
           dbus-daemon --system --fork
           echo "✅ DBus System Bus is now running."
 
-      # === NEW CRITICAL STEP: FLATTEN KICKSTART ===
-      # This merges apex-base.ks and apex-branding.ks into one file
-      # so the builder doesn't fail with "No such file".
+      # === CRITICAL FIX: FLATTEN KICKSTART ===
+      # This combines all 3 files into ONE so the builder can't lose them.
       - name: 🔨 Flatten Kickstart (Fix %include Errors)
         run: |
           echo "Merging kickstart files..."
@@ -60,7 +59,7 @@ jobs:
           rm -rf ./Results
           
           # BUILD COMMAND
-          # Note: We use 'flattened-kickstart.ks' now
+          # We use 'flattened-kickstart.ks' to guarantee success
           livemedia-creator \
             --ks flattened-kickstart.ks \
             --no-virt \

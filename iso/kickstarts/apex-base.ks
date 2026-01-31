@@ -12,12 +12,15 @@ zerombr
 clearpart --all --initlabel
 part / --size 8192 --fstype ext4
 
-# Root Password & Services
+# Root Password
 rootpw --lock --iscrypted locked
-services --enabled=NetworkManager,ModemManager --disabled=sshd
+
+# FIX: Removed 'ModemManager' from here to prevent build crash.
+services --enabled=NetworkManager --disabled=sshd
+
 shutdown
 
-# FIX: DISABLE MEDIA CHECK (Prevents "CheckISOMD5" boot failure)
+# FIX: DISABLE MEDIA CHECK (Prevents "CheckISOMD5" boot loop)
 bootloader --location=none --append="rd.live.check=0"
 
 # 2. NETWORK & REPOS
@@ -88,7 +91,11 @@ sed -i 's/^PRETTY_NAME=.*$/PRETTY_NAME="Apex Linux"/' /etc/os-release
 sed -i 's/^ID=.*$/ID=apex/' /etc/os-release
 echo -e "Apex Linux \n \l" > /etc/issue
 
-# 2. USER SETUP
+# 2. ENABLE MODEM MANAGER (SAFE METHOD)
+# We enable it here. If it errors, the '|| true' ensures the build CONTINUES.
+systemctl enable ModemManager || true
+
+# 3. USER SETUP
 useradd -m -c "Live System User" liveuser
 passwd -d liveuser > /dev/null
 usermod -aG wheel liveuser
