@@ -67,6 +67,14 @@ chown -R liveuser:liveuser /home/liveuser/.config
 systemctl enable sddm
 systemctl enable NetworkManager
 
+# 2. AUTOLOGIN
+mkdir -p /etc/sddm.conf.d
+cat > /etc/sddm.conf.d/autologin.conf << EOF
+[Autologin]
+User=liveuser
+Session=plasma
+EOF
+
 # 3. CLEANUP
 rm -f /var/lib/systemd/random-seed
 dnf clean all

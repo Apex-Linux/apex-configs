@@ -9,24 +9,26 @@ calamares
 # --- 1. DOWNLOAD ASSETS ---
 mkdir -p /usr/share/apex-linux
 
-# A. ASCII Art
+# A. ASCII Art (For Terminal Fetch)
 wget https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/logo.txt -O /usr/share/apex-linux/logo.txt
 
-# B. Main Logo/Icon (Square "A" Logo) -> squid.png
+# B. Main Icon (Square "A" Logo) -> squid.png
 wget https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/calamares/squid.png -O /usr/share/apex-linux/squid.png
 
-# C. Welcome Banner (Rectangular Text Logo) -> welcome.png
+# C. Welcome Banner (Rectangular Text) -> welcome.png
 wget https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/calamares/welcome.png -O /usr/share/apex-linux/welcome.png
 
-# --- 2. UNIVERSAL SHELL BRANDING ---
+# FIX PERMISSIONS
+chmod -R 755 /usr/share/apex-linux
 
-# A. BASH & ZSH
-cat > /etc/profile.d/apex-branding.sh << 'EOF'
+# --- 2. UNIVERSAL SHELL BRANDING (FORCED) ---
+
+# A. BASH GLOBAL (Inject into /etc/bashrc for guaranteed execution)
+cat >> /etc/bashrc << 'EOF'
+# Apex Linux Branding
 alias fastfetch='fastfetch --logo /usr/share/apex-linux/logo.txt --logo-type file --logo-color-1 blue'
 alias neofetch='neofetch --source /usr/share/apex-linux/logo.txt --ascii_distro "Apex Linux"'
-alias screenfetch='screenfetch -A "Apex Linux" -D "Apex Linux"'
 EOF
-chmod +x /etc/profile.d/apex-branding.sh
 
 # B. FISH SHELL
 mkdir -p /etc/fish/conf.d
@@ -39,7 +41,7 @@ function neofetch
 end
 EOF
 
-# --- 3. CALAMARES BRANDING ---
+# --- 3. CALAMARES BRANDING (NUCLEAR FIX) ---
 
 # A. Delete Fedora Defaults
 rm -rf /usr/share/calamares/branding/fedora
@@ -49,13 +51,13 @@ rm -rf /usr/share/calamares/branding/fedoraproject
 # B. Create Apex Branding Directory
 mkdir -p /usr/share/calamares/branding/apex
 
-# C. Place Images Correctly
-# "squid.png" is the Logo/Icon
-cp /usr/share/apex-linux/squid.png /usr/share/calamares/branding/apex/squid.png
-# "welcome.png" is the Side Banner
+# C. Place Images (STRICT MAPPING)
+# logo.png = The Square Icon (Squid)
+cp /usr/share/apex-linux/squid.png /usr/share/calamares/branding/apex/logo.png
+# welcome.png = The Rectangle Banner (Welcome)
 cp /usr/share/apex-linux/welcome.png /usr/share/calamares/branding/apex/welcome.png
 
-# D. branding.desc (Mapped Correctly)
+# D. branding.desc
 cat > /usr/share/calamares/branding/apex/branding.desc << 'EOF'
 ---
 componentName:  apex
@@ -82,8 +84,8 @@ strings:
     donateUrl:           https://github.com/Apex-Linux
 
 images:
-    productLogo:         "squid.png"
-    productIcon:         "squid.png"
+    productLogo:         "logo.png"
+    productIcon:         "logo.png"
     productWelcome:      "welcome.png"
 
 slideshow:               "show.qml"
@@ -120,16 +122,6 @@ Presentation
             horizontalAlignment: Text.AlignCenter
         }
     }
-    Slide {
-        anchors.fill: parent
-        Text {
-            anchors.centerIn: parent
-            text: "Clean. Fast. Apex.<br/><br/>We are setting up your system now."
-            color: "white"
-            font.pixelSize: 24
-            horizontalAlignment: Text.AlignCenter
-        }
-    }
 }
 EOF
 
@@ -155,7 +147,6 @@ Rectangle {
             Layout.topMargin: 10;
             Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
             width: 48; height: 48;
-            # Uses productLogo from branding.desc (squid.png)
             source: "file:/" + Branding.imagePath(Branding.ProductLogo);
             fillMode: Image.PreserveAspectFit
         }
@@ -207,11 +198,55 @@ Rectangle {
 }
 EOF
 
-# --- 4. APPLY SETTINGS ---
-sed -i 's/branding: default/branding: apex/' /etc/calamares/settings.conf
-sed -i 's/branding: fedora/branding: apex/' /etc/calamares/settings.conf
+# --- 4. APPLY SETTINGS (FORCE OVERWRITE) ---
+# Previous SED commands failed. We now rewrite the config file to be sure.
+cat > /etc/calamares/settings.conf << 'EOF'
+modules-search: [ local ]
+instances:
+- id:       before
+  module:   contextualprocess
+  config:   contextualprocess-before.conf
+- id:       after
+  module:   contextualprocess
+  config:   contextualprocess-after.conf
+sequence:
+- show:
+  - welcome
+  - locale
+  - keyboard
+  - partition
+  - users
+  - summary
+- exec:
+  - partition
+  - mount
+  - unpackfs
+  - machineid
+  - fstab
+  - locale
+  - keyboard
+  - localecfg
+  - users
+  - networkcfg
+  - hwclock
+  - services-systemd
+  - packages
+  - grubcfg
+  - bootloader
+  - umount
+- show:
+  - finished
+branding: apex
+prompt-install: false
+dont-chroot: false
+oem-setup: false
+disable-cancel: false
+disable-cancel-during-exec: false
+hide-back-and-next-during-exec: false
+quit-at-end: false
+EOF
 
-# Autostart
+# --- 5. DESKTOP SHORTCUT & ICONS ---
 mkdir -p /home/liveuser/.config/autostart
 cat > /home/liveuser/.config/autostart/calamares.desktop << 'EOF'
 [Desktop Entry]
@@ -225,14 +260,13 @@ StartupNotify=true
 Categories=System;Qt;
 EOF
 
-# Shortcut on Desktop
 mkdir -p /home/liveuser/Desktop
 cp /home/liveuser/.config/autostart/calamares.desktop /home/liveuser/Desktop/install-apex.desktop
 chmod +x /home/liveuser/Desktop/install-apex.desktop
 chown -R liveuser:liveuser /home/liveuser
 
-# --- 5. SYSTEM ICON OVERWRITE (GLOBAL) ---
-# We overwrite Fedora icons with squid.png (the square App Icon)
+# --- 6. OVERWRITE SYSTEM ICONS (GLOBAL) ---
+# We overwrite Fedora icons with squid.png
 cp /usr/share/apex-linux/squid.png /usr/share/pixmaps/fedora-logo-sprite.png
 cp /usr/share/apex-linux/squid.png /usr/share/pixmaps/fedora-logo.png 2>/dev/null || true
 cp /usr/share/apex-linux/squid.png /usr/share/icons/hicolor/48x48/apps/fedora-logo-icon.png 2>/dev/null || true

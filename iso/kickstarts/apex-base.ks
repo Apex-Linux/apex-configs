@@ -15,12 +15,12 @@ part / --size 8192 --fstype ext4
 # Root Password
 rootpw --lock --iscrypted locked
 
-# FIX: Removed 'ModemManager' from here to prevent build crash.
+# FIX 1: Prevent Build Crash (ModemManager MOVED to %post)
 services --enabled=NetworkManager --disabled=sshd
 
 shutdown
 
-# FIX: DISABLE MEDIA CHECK (Prevents "CheckISOMD5" boot loop)
+# FIX 2: DISABLE MEDIA CHECK (Prevents "Media Check Failed" Crash)
 bootloader --location=none --append="rd.live.check=0"
 
 # 2. NETWORK & REPOS
@@ -43,7 +43,7 @@ efibootmgr
 grub2-efi-x64-cdboot
 syslinux
 
-# GLOBAL FONTS (Full Support for Bengali, Arabic, CJK, etc.)
+# GLOBAL FONTS
 @fonts
 google-noto-sans-fonts
 google-noto-serif-fonts
@@ -73,7 +73,7 @@ exfatprogs
 dosfstools
 fuse
 
-# REMOVE ANACONDA (We use Calamares)
+# REMOVE ANACONDA
 -anaconda*
 -anaconda-core
 -anaconda-gui
@@ -91,8 +91,8 @@ sed -i 's/^PRETTY_NAME=.*$/PRETTY_NAME="Apex Linux"/' /etc/os-release
 sed -i 's/^ID=.*$/ID=apex/' /etc/os-release
 echo -e "Apex Linux \n \l" > /etc/issue
 
-# 2. ENABLE MODEM MANAGER (SAFE METHOD)
-# We enable it here. If it errors, the '|| true' ensures the build CONTINUES.
+# 2. ENABLE MODEM MANAGER (SAFE MODE)
+# Must be here to avoid build crash
 systemctl enable ModemManager || true
 
 # 3. USER SETUP
