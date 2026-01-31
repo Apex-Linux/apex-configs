@@ -8,26 +8,29 @@ calamares
 %post
 # --- 1. DOWNLOAD ASSETS ---
 mkdir -p /usr/share/apex-linux
-# ASCII ART (For Fetch Tools)
+
+# A. ASCII Art
 wget https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/logo.txt -O /usr/share/apex-linux/logo.txt
-# PNG LOGO (For Calamares & Icons)
-wget https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/calamares/squid.png -O /usr/share/apex-linux/logo.png
 
-# --- 2. UNIVERSAL SHELL BRANDING (BASH, ZSH, FISH) ---
+# B. Main Logo/Icon (Square "A" Logo) -> squid.png
+wget https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/calamares/squid.png -O /usr/share/apex-linux/squid.png
 
-# A. BASH & ZSH (Handled by /etc/profile.d)
+# C. Welcome Banner (Rectangular Text Logo) -> welcome.png
+wget https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/calamares/welcome.png -O /usr/share/apex-linux/welcome.png
+
+# --- 2. UNIVERSAL SHELL BRANDING ---
+
+# A. BASH & ZSH
 cat > /etc/profile.d/apex-branding.sh << 'EOF'
-# Force Apex branding on all fetch tools
 alias fastfetch='fastfetch --logo /usr/share/apex-linux/logo.txt --logo-type file --logo-color-1 blue'
 alias neofetch='neofetch --source /usr/share/apex-linux/logo.txt --ascii_distro "Apex Linux"'
 alias screenfetch='screenfetch -A "Apex Linux" -D "Apex Linux"'
 EOF
 chmod +x /etc/profile.d/apex-branding.sh
 
-# B. FISH SHELL (Handled by /etc/fish/conf.d)
+# B. FISH SHELL
 mkdir -p /etc/fish/conf.d
 cat > /etc/fish/conf.d/apex-branding.fish << 'EOF'
-# Apex Linux Fetch Overrides for Fish
 function fastfetch
     command fastfetch --logo /usr/share/apex-linux/logo.txt --logo-type file --logo-color-1 blue $argv
 end
@@ -36,20 +39,23 @@ function neofetch
 end
 EOF
 
-# --- 3. CALAMARES BRANDING---
+# --- 3. CALAMARES BRANDING ---
 
-# A. Delete Fedora Defaults (Nuclear Option)
+# A. Delete Fedora Defaults
 rm -rf /usr/share/calamares/branding/fedora
 rm -rf /usr/share/calamares/branding/default
 rm -rf /usr/share/calamares/branding/fedoraproject
 
 # B. Create Apex Branding Directory
 mkdir -p /usr/share/calamares/branding/apex
-# Copy our logo to 'kaos.png' because the QML references it
-cp /usr/share/apex-linux/logo.png /usr/share/calamares/branding/apex/kaos.png
-cp /usr/share/apex-linux/logo.png /usr/share/calamares/branding/apex/logo.png
 
-# C. branding.desc (The Config)
+# C. Place Images Correctly
+# "squid.png" is the Logo/Icon
+cp /usr/share/apex-linux/squid.png /usr/share/calamares/branding/apex/squid.png
+# "welcome.png" is the Side Banner
+cp /usr/share/apex-linux/welcome.png /usr/share/calamares/branding/apex/welcome.png
+
+# D. branding.desc (Mapped Correctly)
 cat > /usr/share/calamares/branding/apex/branding.desc << 'EOF'
 ---
 componentName:  apex
@@ -76,9 +82,9 @@ strings:
     donateUrl:           https://github.com/Apex-Linux
 
 images:
-    productLogo:         "kaos.png"
-    productIcon:         "kaos.png"
-    productWelcome:      "kaos.png"
+    productLogo:         "squid.png"
+    productIcon:         "squid.png"
+    productWelcome:      "welcome.png"
 
 slideshow:               "show.qml"
 slideshowAPI:            1
@@ -90,7 +96,7 @@ style:
    SidebarBackgroundCurrent: "#31363b"
 EOF
 
-# D. show.qml (The Slideshow - Adapted from KaOS)
+# E. show.qml (Slideshow)
 cat > /usr/share/calamares/branding/apex/show.qml << 'EOF'
 import QtQuick 2.0;
 import calamares.slideshow 1.0;
@@ -127,7 +133,7 @@ Presentation
 }
 EOF
 
-# E. navigation.qml (Right Bar - Adapted from KaOS)
+# F. navigation.qml (Right Bar)
 cat > /usr/share/calamares/branding/apex/navigation.qml << 'EOF'
 import io.calamares.ui 1.0
 import io.calamares.core 1.0
@@ -149,6 +155,7 @@ Rectangle {
             Layout.topMargin: 10;
             Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
             width: 48; height: 48;
+            # Uses productLogo from branding.desc (squid.png)
             source: "file:/" + Branding.imagePath(Branding.ProductLogo);
             fillMode: Image.PreserveAspectFit
         }
@@ -170,7 +177,7 @@ Rectangle {
 }
 EOF
 
-# F. sidebar.qml (Bottom Bar - Adapted from KaOS)
+# G. sidebar.qml (Bottom Bar)
 cat > /usr/share/calamares/branding/apex/sidebar.qml << 'EOF'
 import io.calamares.ui 1.0
 import io.calamares.core 1.0
@@ -204,7 +211,7 @@ EOF
 sed -i 's/branding: default/branding: apex/' /etc/calamares/settings.conf
 sed -i 's/branding: fedora/branding: apex/' /etc/calamares/settings.conf
 
-# Autostart (sudo -E preserves dark mode environment)
+# Autostart
 mkdir -p /home/liveuser/.config/autostart
 cat > /home/liveuser/.config/autostart/calamares.desktop << 'EOF'
 [Desktop Entry]
@@ -212,7 +219,7 @@ Type=Application
 Name=Install Apex Linux
 GenericName=Live Installer
 Exec=sudo -E calamares
-Icon=/usr/share/apex-linux/logo.png
+Icon=/usr/share/apex-linux/squid.png
 Terminal=false
 StartupNotify=true
 Categories=System;Qt;
@@ -225,11 +232,12 @@ chmod +x /home/liveuser/Desktop/install-apex.desktop
 chown -R liveuser:liveuser /home/liveuser
 
 # --- 5. SYSTEM ICON OVERWRITE (GLOBAL) ---
-cp /usr/share/apex-linux/logo.png /usr/share/pixmaps/fedora-logo-sprite.png
-cp /usr/share/apex-linux/logo.png /usr/share/pixmaps/fedora-logo.png 2>/dev/null || true
-cp /usr/share/apex-linux/logo.png /usr/share/icons/hicolor/48x48/apps/fedora-logo-icon.png 2>/dev/null || true
-cp /usr/share/apex-linux/logo.png /usr/share/icons/hicolor/scalable/apps/fedora-logo-icon.svg 2>/dev/null || true
-cp /usr/share/apex-linux/logo.png /usr/share/icons/hicolor/scalable/apps/start-here.svg 2>/dev/null || true
-cp /usr/share/apex-linux/logo.png /usr/share/icons/hicolor/scalable/places/start-here.svg 2>/dev/null || true
+# We overwrite Fedora icons with squid.png (the square App Icon)
+cp /usr/share/apex-linux/squid.png /usr/share/pixmaps/fedora-logo-sprite.png
+cp /usr/share/apex-linux/squid.png /usr/share/pixmaps/fedora-logo.png 2>/dev/null || true
+cp /usr/share/apex-linux/squid.png /usr/share/icons/hicolor/48x48/apps/fedora-logo-icon.png 2>/dev/null || true
+cp /usr/share/apex-linux/squid.png /usr/share/icons/hicolor/scalable/apps/fedora-logo-icon.svg 2>/dev/null || true
+cp /usr/share/apex-linux/squid.png /usr/share/icons/hicolor/scalable/apps/start-here.svg 2>/dev/null || true
+cp /usr/share/apex-linux/squid.png /usr/share/icons/hicolor/scalable/places/start-here.svg 2>/dev/null || true
 gtk-update-icon-cache /usr/share/icons/hicolor/
 %end
