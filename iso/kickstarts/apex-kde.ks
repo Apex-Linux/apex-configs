@@ -12,10 +12,10 @@ xconfig --startxonboot
 zerombr
 clearpart --all --initlabel
 
-# FIX 1: Partition Size
+# FIX 1: Partition Size (8GB Root for Live Image)
 part / --size 8192 --fstype ext4
 
-# FIX 2: Root Password
+# FIX 2: Root Password (Locked)
 rootpw --lock --iscrypted locked
 
 # FIX 3: Services
@@ -36,6 +36,7 @@ repo --name=apex-core --baseurl=https://download.copr.fedorainfracloud.org/resul
 
 # === 3. PACKAGE SELECTION ===
 %packages
+
 # Core Hardware
 @core
 @hardware-support
@@ -51,9 +52,7 @@ syslinux
 # Live System Tools
 dracut-live
 livesys-scripts
-anaconda
-anaconda-install-env-deps
-anaconda-live
+# ANACONDA REMOVED (Replaced by Calamares)
 
 # Security
 selinux-policy
@@ -86,7 +85,7 @@ pipewire-alsa
 pipewire-pulseaudio
 wireplumber
 
-# The Installer
+# The Installer (The ONLY one we need)
 calamares
 
 # Essential Tools
@@ -119,6 +118,16 @@ fuse
 -kmahjongg
 -kpat
 -dnfdragora
+
+# REMOVE OLD INSTALLER
+-anaconda*
+-anaconda-core
+-anaconda-gui
+-anaconda-widgets
+-anaconda-tui
+-gnome-kiosk
+-initial-setup
+-initial-setup-gui
 %end
 
 # === 4. POST-INSTALL CONFIGURATION ===
@@ -139,7 +148,6 @@ wget https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding
 wget https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/calamares/welcome.png -O /usr/share/calamares/branding/apex/welcome.png
 
 # FORCE Calamares to use 'apex' branding instead of 'default' or 'fedora'
-# This command edits the settings file directly
 sed -i 's/branding: default/branding: apex/' /etc/calamares/settings.conf
 sed -i 's/branding: fedora/branding: apex/' /etc/calamares/settings.conf
 
