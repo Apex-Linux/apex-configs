@@ -29,6 +29,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Build Dependencies
+        # Added 'pykickstart' to get the ksflatten tool
         run: dnf install -y lorax lorax-lmc-novirt anaconda pykickstart git wget zstd xz dbus-daemon util-linux
 
       - name: Lint Kickstart Syntax
@@ -44,14 +45,24 @@ jobs:
           dbus-daemon --system --fork
           echo "✅ DBus System Bus is now running."
 
+      # === NEW CRITICAL STEP: FLATTEN KICKSTART ===
+      # This merges apex-base.ks and apex-branding.ks into one file
+      # so the builder doesn't fail with "No such file".
+      - name: 🔨 Flatten Kickstart (Fix %include Errors)
+        run: |
+          echo "Merging kickstart files..."
+          ksflatten -c "${{ inputs.kickstart_path }}" -o flattened-kickstart.ks
+          echo "✅ Flattening complete. Using 'flattened-kickstart.ks' for build."
+
       - name: Build Apex Linux ISO
         run: |
           git config --global --add safe.directory "*"
           rm -rf ./Results
           
           # BUILD COMMAND
+          # Note: We use 'flattened-kickstart.ks' now
           livemedia-creator \
-            --ks "${{ inputs.kickstart_path }}" \
+            --ks flattened-kickstart.ks \
             --no-virt \
             --make-iso \
             --iso-only \
@@ -62,26 +73,29 @@ jobs:
             --releasever "${{ inputs.release_ver }}" \
             --resultdir ./Results
 
-      - name: ⚖️ Check & Split ISO (Bypass GitHub Limit)
+      - name: ⚖️ Check & Split ISO (Strict 1.9GB Limit)
         run: |
           cd ./Results
           ISO_FILE=$(ls *.iso | head -n 1)
           FILE_SIZE=$(stat -c%s "$ISO_FILE")
-          LIMIT=2100000000 # 2.1 GB Limit
+          
+          # STRICT LIMIT: 1.9 GB (1,900,000,000 bytes)
+          LIMIT=1900000000
 
           echo "File size is: $FILE_SIZE bytes"
+          echo "Safety Limit is: $LIMIT bytes"
 
           if [ $FILE_SIZE -ge $LIMIT ]; then
-            echo "⚠️ ISO is too big for a single upload!"
-            echo "✂️ Splitting into 2GB chunks..."
-            # Split into parts named .iso.000, .iso.001, etc.
-            split -b 2000M -d "$ISO_FILE" "$ISO_FILE."
+            echo "⚠️ ISO is bigger than 1.9 GB! Initiating safety split."
+            echo "✂️ Splitting into 1.9 GB chunks..."
             
-            # Remove the original big file so we don't try to upload it
+            # Split into chunks of 1900M strictly
+            split -b 1900M -d "$ISO_FILE" "$ISO_FILE."
+            
             rm "$ISO_FILE"
             echo "✅ Split complete."
           else
-            echo "✅ ISO is safe for single upload."
+            echo "✅ ISO is under 1.9 GB. Safe for single upload."
           fi
 
       - name: Publish to GitHub Releases
@@ -98,10 +112,10 @@ jobs:
             - **Base:** Fedora ${{ inputs.release_ver }}
             
             ### ⚠️ Download Instructions (If Split)
-            If you see files named `.iso.00`, `.iso.01`:
+            If the ISO is over 1.9GB, you will see files named `.iso.00`, `.iso.01`.
             1. Download all parts.
-            2. **Windows:** Use 7-Zip to extract the first file (`.00`), it will combine them automatically.
-            3. **Linux/Mac:** Run `cat *.iso.* > Apex-Linux.iso`
+            2. **Windows:** Use 7-Zip to extract the `.00` file (it combines them automatically).
+            3. **Linux/Mac:** Run command: `cat *.iso.* > Apex-Linux.iso`
           files: ./Results/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -11,11 +11,13 @@ xconfig --startxonboot
 zerombr
 clearpart --all --initlabel
 part / --size 8192 --fstype ext4
+
+# Root Password & Services
 rootpw --lock --iscrypted locked
 services --enabled=NetworkManager,ModemManager --disabled=sshd
 shutdown
 
-# DISABLE MEDIA CHECK (Prevents "CheckISOMD5" boot failure)
+# FIX: DISABLE MEDIA CHECK (Prevents "CheckISOMD5" boot failure)
 bootloader --location=none --append="rd.live.check=0"
 
 # 2. NETWORK & REPOS
