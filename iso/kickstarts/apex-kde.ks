@@ -12,11 +12,13 @@ xconfig --startxonboot
 zerombr
 clearpart --all --initlabel
 
-
+# FIX 1: Partition Size (8GB Root for Live Image)
 part / --size 8192 --fstype ext4
 
+# FIX 2: Root Password (Locked)
 rootpw --lock --iscrypted locked
 
+# FIX 3: Services
 services --enabled=NetworkManager,ModemManager --disabled=sshd
 
 # Shutdown after build
@@ -34,7 +36,6 @@ repo --name=apex-core --baseurl=https://download.copr.fedorainfracloud.org/resul
 
 # === 3. PACKAGE SELECTION ===
 %packages
-
 # Core Hardware
 @core
 @hardware-support
@@ -138,41 +139,51 @@ fuse
 mkdir -p /usr/share/apex-linux
 wget https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/logo.txt -O /usr/share/apex-linux/logo.txt
 
-# --- 2. CALAMARES BRANDING ---
+# --- 2. CALAMARES BRANDING (SCORCHED EARTH) ---
+# Delete Fedora branding so it CANNOT fall back to it
+rm -rf /usr/share/calamares/branding/fedora
+rm -rf /usr/share/calamares/branding/default
+rm -rf /usr/share/calamares/branding/fedoraproject
+
+# Create Apex branding folder
 mkdir -p /usr/share/calamares/branding/apex
 wget https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/calamares/branding.desc -O /usr/share/calamares/branding/apex/branding.desc
 wget https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/calamares/squid.png -O /usr/share/calamares/branding/apex/squid.png
 wget https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/calamares/welcome.png -O /usr/share/calamares/branding/apex/welcome.png
 
-# Force Calamares to use 'apex' branding
+# Force settings to use 'apex'
 sed -i 's/branding: default/branding: apex/' /etc/calamares/settings.conf
 sed -i 's/branding: fedora/branding: apex/' /etc/calamares/settings.conf
+sed -i 's/branding: fedoraproject/branding: apex/' /etc/calamares/settings.conf
 
-# --- 3. FIX: UNIVERSAL FETCH BRANDING (Global) ---
+# --- 3. UNIVERSAL FETCH (GLOBAL ALIAS) ---
+# This forces YOUR logo on every terminal launch
 cat > /etc/profile.d/apex-branding.sh << 'EOF'
-
-# Force Fastfetch (Modern)
+# Force Fastfetch
 alias fastfetch='fastfetch --logo /usr/share/apex-linux/logo.txt --logo-type file --logo-color-1 blue'
-
-# Force Neofetch (Legacy)
+# Force Neofetch
 alias neofetch='neofetch --source /usr/share/apex-linux/logo.txt --ascii_distro "Apex Linux"'
-
-# Force Screenfetch (Old School)
+# Force Screenfetch
 alias screenfetch='screenfetch -A "Apex Linux" -D "Apex Linux"'
 EOF
 chmod +x /etc/profile.d/apex-branding.sh
 
-# --- 4. SYSTEM ICONS---
+# --- 4. SYSTEM ICONS (FORCE OVERWRITE) ---
+# We overwrite Fedora's icon files with YOUR Squid.
+# If the dock asks for "fedora-logo-icon.png", it gets a SQUID.
 cp /usr/share/calamares/branding/apex/squid.png /usr/share/pixmaps/fedora-logo-sprite.png
 cp /usr/share/calamares/branding/apex/squid.png /usr/share/pixmaps/fedora-logo.png 2>/dev/null || true
 cp /usr/share/calamares/branding/apex/squid.png /usr/share/icons/hicolor/48x48/apps/fedora-logo-icon.png 2>/dev/null || true
+cp /usr/share/calamares/branding/apex/squid.png /usr/share/icons/hicolor/scalable/apps/fedora-logo-icon.svg 2>/dev/null || true
 
-# --- 5. SYSTEM IDENTITY (The "Root" Source) ---
+# Refresh Icon Cache
+gtk-update-icon-cache /usr/share/icons/hicolor/
+
+# --- 5. SYSTEM IDENTITY ---
 sed -i 's/^NAME=.*$/NAME="Apex Linux"/' /etc/os-release
 sed -i 's/^PRETTY_NAME=.*$/PRETTY_NAME="Apex Linux"/' /etc/os-release
 sed -i 's/^ID=.*$/ID=apex/' /etc/os-release
-
-# Update /etc/issue (TTY Login Screen)
+# TTY Login Screen (Clean)
 echo "Apex Linux \n \l" > /etc/issue
 
 # --- 6. USER & PERMISSIONS ---
@@ -182,38 +193,40 @@ usermod -aG wheel liveuser
 echo "%wheel ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/wheel
 chmod 0440 /etc/sudoers.d/wheel
 
-# --- 7. DARK MODE---
+# --- 7. DARK MODE (SYSTEM WIDE) ---
 mkdir -p /home/liveuser/.config
-cat > /home/liveuser/.config/kdeglobals << 'EOF'
+mkdir -p /etc/skel/.config
+cat > /tmp/kdeglobals << 'EOF'
 [General]
 ColorScheme=BreezeDark
 Name=Breeze Dark
-
 [KDE]
 LookAndFeelPackage=org.kde.breezedark.desktop
 EOF
+# Apply to Live User AND Future Users
+cp /tmp/kdeglobals /home/liveuser/.config/kdeglobals
+cp /tmp/kdeglobals /etc/skel/.config/kdeglobals
 chown -R liveuser:liveuser /home/liveuser/.config
 
-# --- 8. AUTOSTART CALAMARES ---
+# --- 8. AUTOSTART CALAMARES (WITH SUDO) ---
+# Uses 'sudo' to fix Administrator Rights error
 mkdir -p /home/liveuser/.config/autostart
 cat > /home/liveuser/.config/autostart/calamares.desktop << 'EOF'
 [Desktop Entry]
 Type=Application
 Name=Install Apex Linux
 GenericName=Live Installer
-Exec=calamares
+Exec=sudo calamares
 Icon=/usr/share/calamares/branding/apex/squid.png
 Terminal=false
 StartupNotify=true
 Categories=System;Qt;
 EOF
 
-# Also put it on the Desktop
+# Setup Desktop Shortcut
 mkdir -p /home/liveuser/Desktop
 cp /home/liveuser/.config/autostart/calamares.desktop /home/liveuser/Desktop/install-apex.desktop
 chmod +x /home/liveuser/Desktop/install-apex.desktop
-
-# Ownership
 chown -R liveuser:liveuser /home/liveuser
 
 # Enable SDDM Autologin
