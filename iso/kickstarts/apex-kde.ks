@@ -120,9 +120,6 @@ fuse
 -plasma-welcome
 -plasma-welcome-agent
 
-# FIX: REMOVE NETWORK BOOT NOISE (Fixes 'Dracut URL' error)
--dracut-network
-
 # REMOVE OLD INSTALLER (Critical Space Saver ~300MB)
 -anaconda*
 -anaconda-core
