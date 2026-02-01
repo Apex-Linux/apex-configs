@@ -1,61 +1,76 @@
-# === APEX LINUX BRANDING ===
-# Handles Logos, ASCII Art, Icons, and Calamares UI Injection.
+# === APEX LINUX BRANDING (Qt6 + Git Injection) ===
 
 %packages
 calamares
 qt6-qtsvg
+git
+fastfetch
+plymouth-plugin-script
 %end
 
-# === STEP 1: COPY ASSETS FROM GITHUB ===
-%post --nochroot --erroronfail
-echo ">>> COPYING BRANDING ASSETS FROM GITHUB WORKSPACE <<<"
-mkdir -p $INSTALL_ROOT/usr/share/apex-linux/
-# Copy all assets (images/logos) from the repo
-cp -r /__w/apex-configs/apex-configs/iso/branding/* $INSTALL_ROOT/usr/share/apex-linux/
-echo ">>> COPY COMPLETE <<<"
-%end
-
-# === STEP 2: CONFIGURE SYSTEM ===
+# === STEP 1: DYNAMIC ASSET INJECTION ===
 %post --erroronfail
 
-echo ">>> CONFIGURING APEX BRANDING <<<"
+echo ">>> INJECTING ASSETS FROM GITHUB <<<"
+# We use --depth 1 to make the download instant.
+# This eliminates "File Not Found" errors by pulling fresh from source.
+git clone --depth 1 https://github.com/Apex-Linux/apex-configs.git /tmp/apex-assets
+
+mkdir -p /usr/share/apex-linux/calamares
+
+# Safe Copy (Force Overwrite)
+cp -f /tmp/apex-assets/iso/branding/logo.txt /usr/share/apex-linux/
+cp -f /tmp/apex-assets/iso/branding/calamares/squid.png /usr/share/apex-linux/calamares/
+cp -f /tmp/apex-assets/iso/branding/calamares/welcome.png /usr/share/apex-linux/calamares/
+
+# Cleanup
+rm -rf /tmp/apex-assets
+echo ">>> ASSETS INJECTED <<<"
+%end
+
+# === STEP 2: CONFIGURE SHELL (MODERN FASTFETCH) ===
+%post --erroronfail
 chmod -R 755 /usr/share/apex-linux
 
-# --- 1. UNIVERSAL SHELL BRANDING ---
-# We use z99-apex.sh to ensure this runs LAST and overrides Fedora
+# Create a modern JSONC config for Fastfetch
+mkdir -p /usr/share/fastfetch/presets
+cat > /usr/share/fastfetch/presets/apex.jsonc << 'EOF'
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "source": "/usr/share/apex-linux/logo.txt",
+    "type": "file",
+    "color": { "1": "blue" }
+  },
+  "modules": [
+    "title", "separator", "os", "host", "kernel", "uptime", "packages", "shell", "de", "memory", "disk", "break", "colors"
+  ]
+}
+EOF
+
+# Apply globally
 cat > /etc/profile.d/z99-apex.sh << 'EOF'
-alias fastfetch='fastfetch --logo /usr/share/apex-linux/logo.txt --logo-type file --logo-color-1 blue'
-alias neofetch='neofetch --source /usr/share/apex-linux/logo.txt --ascii_distro "Apex Linux"'
+alias fastfetch='fastfetch --config /usr/share/fastfetch/presets/apex.jsonc'
+alias neofetch='fastfetch --config /usr/share/fastfetch/presets/apex.jsonc'
 EOF
 chmod +x /etc/profile.d/z99-apex.sh
+%end
 
-mkdir -p /etc/fish/conf.d
-cat > /etc/fish/conf.d/apex-branding.fish << 'EOF'
-function fastfetch
-    command fastfetch --logo /usr/share/apex-linux/logo.txt --logo-type file --logo-color-1 blue $argv
-end
-function neofetch
-    command neofetch --source /usr/share/apex-linux/logo.txt --ascii_distro "Apex Linux" $argv
-end
-EOF
+# === STEP 3: CALAMARES BRANDING (Qt6 UPDATED) ===
+%post --erroronfail
 
-# --- 2. CALAMARES BRANDING SETUP ---
-
-# A. Delete Defaults
+# A. CLEANUP
 rm -rf /usr/share/calamares/branding/fedora
 rm -rf /usr/share/calamares/branding/default
-rm -rf /usr/share/calamares/branding/fedoraproject
-
-# B. Create Apex Branding Directory
 mkdir -p /usr/share/calamares/branding/apex
 
-# C. COPY IMAGES
-# We use 'squid.png' here because your branding.desc asks for 'squid.png'
+# B. IMAGES
 cp /usr/share/apex-linux/calamares/squid.png /usr/share/calamares/branding/apex/squid.png
 cp /usr/share/apex-linux/calamares/welcome.png /usr/share/calamares/branding/apex/welcome.png
+# Use the logo as the icon too
+cp /usr/share/apex-linux/calamares/squid.png /usr/share/calamares/branding/apex/icon.png
 
-# D. GENERATE BRANDING.DESC (CRITICAL FIX)
-# We WRITE this file here to ensure it exists. No more missing file errors.
+# C. BRANDING.DESC
 cat > /usr/share/calamares/branding/apex/branding.desc << 'EOF'
 ---
 componentName:  apex
@@ -83,7 +98,7 @@ strings:
 
 images:
     productLogo:         "squid.png"
-    productIcon:         "squid.png"
+    productIcon:         "icon.png"
     productWelcome:      "welcome.png"
 
 slideshow:               "show.qml"
@@ -96,18 +111,17 @@ style:
    sidebarTextHighlight: "#00BFFF"
 EOF
 
-# E. GENERATE QML FILES
-cat > /usr/share/calamares/branding/apex/show.qml << 'EOF'
-import QtQuick 2.0;
-import calamares.slideshow 1.0;
+# D. QML FILES (Qt6 COMPATIBLE - CRITICAL)
+# In Qt6, "import QtQuick 2.0" is dead. Use "import QtQuick".
 
-Presentation
-{
+cat > /usr/share/calamares/branding/apex/show.qml << 'EOF'
+import QtQuick
+import calamares.slideshow 1.0
+
+Presentation {
     id: presentation
     Timer {
-        interval: 5000
-        running: true
-        repeat: true
+        interval: 5000; running: true; repeat: true
         onTriggered: presentation.goToNextSlide()
     }
     Slide {
@@ -126,30 +140,24 @@ EOF
 cat > /usr/share/calamares/branding/apex/navigation.qml << 'EOF'
 import io.calamares.ui 1.0
 import io.calamares.core 1.0
-import QtQuick 2.3
-import QtQuick.Controls 2.10
-import QtQuick.Layouts 1.3
+import QtQuick
+import QtQuick.Controls
+import QtQuick.Layouts
 
 Rectangle {
     id: navigationBar;
     color: Branding.styleString( Branding.SidebarBackground );
-    height: parent.height;
-    width:64;
+    height: parent.height; width: 64;
 
     ColumnLayout {
-        anchors.fill: parent;
-        spacing: 1
-
+        anchors.fill: parent; spacing: 1
         Image {
-            Layout.topMargin: 10;
-            Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+            Layout.topMargin: 10; Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
             width: 48; height: 48;
             source: "file:/" + Branding.imagePath(Branding.ProductLogo);
             fillMode: Image.PreserveAspectFit
         }
-
         Item { Layout.fillHeight: true; }
-
         Rectangle {
             id: nextArea
             Layout.preferredHeight: 64; Layout.fillWidth: true
@@ -168,8 +176,8 @@ EOF
 cat > /usr/share/calamares/branding/apex/sidebar.qml << 'EOF'
 import io.calamares.ui 1.0
 import io.calamares.core 1.0
-import QtQuick 2.3
-import QtQuick.Layouts 1.3
+import QtQuick
+import QtQuick.Layouts
 
 Rectangle {
     id: sideBar;
@@ -194,7 +202,7 @@ Rectangle {
 }
 EOF
 
-# --- 3. OVERWRITE SETTINGS.CONF ---
+# E. SETTINGS.CONF (Standardized)
 cat > /etc/calamares/settings.conf << 'EOF'
 modules-search: [ local ]
 instances:
@@ -241,7 +249,7 @@ hide-back-and-next-during-exec: false
 quit-at-end: false
 EOF
 
-# --- 4. DESKTOP SHORTCUT ---
+# F. DESKTOP SHORTCUT & ICONS
 mkdir -p /home/liveuser/.config/autostart
 cat > /home/liveuser/.config/autostart/calamares.desktop << 'EOF'
 [Desktop Entry]
@@ -249,7 +257,7 @@ Type=Application
 Name=Install Apex Linux
 GenericName=Live Installer
 Exec=sudo -E calamares
-Icon=/usr/share/apex-linux/calamares/squid.png
+Icon=/usr/share/calamares/branding/apex/icon.png
 Terminal=false
 StartupNotify=true
 Categories=System;Qt;
@@ -260,14 +268,9 @@ cp /home/liveuser/.config/autostart/calamares.desktop /home/liveuser/Desktop/ins
 chmod +x /home/liveuser/Desktop/install-apex.desktop
 chown -R liveuser:liveuser /home/liveuser
 
-# --- 5. SYSTEM ICONS ---
-cp /usr/share/apex-linux/calamares/squid.png /usr/share/pixmaps/fedora-logo-sprite.png
-cp /usr/share/apex-linux/calamares/squid.png /usr/share/pixmaps/fedora-logo.png 2>/dev/null || true
-cp /usr/share/apex-linux/calamares/squid.png /usr/share/icons/hicolor/48x48/apps/fedora-logo-icon.png 2>/dev/null || true
-cp /usr/share/apex-linux/calamares/squid.png /usr/share/icons/hicolor/scalable/apps/fedora-logo-icon.svg 2>/dev/null || true
-cp /usr/share/apex-linux/calamares/squid.png /usr/share/icons/hicolor/scalable/apps/start-here.svg 2>/dev/null || true
-cp /usr/share/apex-linux/calamares/squid.png /usr/share/icons/hicolor/scalable/places/start-here.svg 2>/dev/null || true
-gtk-update-icon-cache /usr/share/icons/hicolor/
+# System Icons (Replacements)
+cp /usr/share/calamares/branding/apex/icon.png /usr/share/pixmaps/fedora-logo-sprite.png
+cp /usr/share/calamares/branding/apex/icon.png /usr/share/pixmaps/fedora-logo.png 2>/dev/null || true
 
 echo ">>> APEX BRANDING COMPLETE <<<"
 %end

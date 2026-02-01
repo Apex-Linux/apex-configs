@@ -29,14 +29,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Build Dependencies
-        # Added 'pykickstart' to provide the 'ksflatten' tool
+        # Added 'pykickstart' for ksflatten and 'git' for asset injection
         run: dnf install -y lorax lorax-lmc-novirt anaconda pykickstart git wget zstd xz dbus-daemon util-linux
 
       - name: Lint Kickstart Syntax
         run: ksvalidator "${{ inputs.kickstart_path }}"
 
       - name: Generate Date Variable
-        run: echo "DATE=$(date +%F)" >> $GITHUB_ENV
+        run: echo "DATE=$(date +%Y%m%d)" >> $GITHUB_ENV
 
       - name: 🔧 Fix DBus & Machine ID
         run: |
@@ -45,21 +45,18 @@ jobs:
           dbus-daemon --system --fork
           echo "✅ DBus System Bus is now running."
 
-      # === CRITICAL FIX: FLATTEN KICKSTART ===
-      # This combines all 3 files into ONE so the builder can't lose them.
-      - name: 🔨 Flatten Kickstart (Fix %include Errors)
+      - name: 🔨 Flatten Kickstart
         run: |
           echo "Merging kickstart files..."
+          # Fix for 'git clone' inside kickstarts if used
+          git config --global --add safe.directory "*"
           ksflatten -c "${{ inputs.kickstart_path }}" -o flattened-kickstart.ks
-          echo "✅ Flattening complete. Using 'flattened-kickstart.ks' for build."
+          echo "✅ Flattening complete."
 
       - name: Build Apex Linux ISO
         run: |
-          git config --global --add safe.directory "*"
           rm -rf ./Results
           
-          # BUILD COMMAND
-          # We use 'flattened-kickstart.ks' to guarantee success
           livemedia-creator \
             --ks flattened-kickstart.ks \
             --no-virt \
@@ -68,7 +65,7 @@ jobs:
             --compression xz \
             --project "Apex Linux" \
             --volid "Apex-KDE-${{ inputs.release_ver }}" \
-            --iso-name "Apex-Linux-KDE-${{ inputs.release_ver }}-$(date +%Y%m%d).iso" \
+            --iso-name "Apex-Linux-KDE-${{ inputs.release_ver }}-${{ env.DATE }}.iso" \
             --releasever "${{ inputs.release_ver }}" \
             --resultdir ./Results
 
@@ -77,24 +74,16 @@ jobs:
           cd ./Results
           ISO_FILE=$(ls *.iso | head -n 1)
           FILE_SIZE=$(stat -c%s "$ISO_FILE")
-          
-          # STRICT LIMIT: 1.9 GB (1,900,000,000 bytes)
-          LIMIT=1900000000
+          LIMIT=1900000000 # 1.9GB
 
-          echo "File size is: $FILE_SIZE bytes"
-          echo "Safety Limit is: $LIMIT bytes"
-
+          echo "File size: $FILE_SIZE"
           if [ $FILE_SIZE -ge $LIMIT ]; then
-            echo "⚠️ ISO is bigger than 1.9 GB! Initiating safety split."
-            echo "✂️ Splitting into 1.9 GB chunks..."
-            
-            # Split into chunks of 1900M strictly
+            echo "⚠️ ISO > 1.9 GB. Splitting..."
             split -b 1900M -d "$ISO_FILE" "$ISO_FILE."
-            
             rm "$ISO_FILE"
             echo "✅ Split complete."
           else
-            echo "✅ ISO is under 1.9 GB. Safe for single upload."
+            echo "✅ ISO is safe for single upload."
           fi
 
       - name: Publish to GitHub Releases
@@ -104,23 +93,18 @@ jobs:
           tag_name: v2026.1.${{ github.run_number }}
           name: Apex Linux ${{ env.DATE }}
           body: |
-            ## Apex Linux 2026.1
-            **The Full KDE Experience.**
+            ## Apex Linux 2026.1 (Build ${{ github.run_number }})
+            **The Modern Fedora 43 Experience.**
             
-            - **Version:** Build ${{ github.run_number }}
             - **Base:** Fedora ${{ inputs.release_ver }}
+            - **Kernel:** Latest
+            - **Desktop:** KDE Plasma 6
             
-            ### ⚠️ Download Instructions (If Split)
-            If the ISO is over 1.9GB, you will see files named `.iso.00`, `.iso.01`.
+            ### ⚠️ Installation
+            If you see files ending in `.iso.00`, `.iso.01`:
             1. Download all parts.
-            2. **Windows:** Use 7-Zip to extract the `.00` file (it combines them automatically).
-            3. **Linux/Mac:** Run command: `cat *.iso.* > Apex-Linux.iso`
+            2. **Windows:** Extract `.00` with 7-Zip.
+            3. **Linux:** `cat *.iso.* > Apex-Linux.iso`
           files: ./Results/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: "DEBUG: Print logs"
-        if: failure()
-        run: |
-          [ -f ./program.log ] && cat ./program.log
-          [ -f ./livemedia.log ] && cat ./livemedia.log

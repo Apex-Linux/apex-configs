@@ -1,7 +1,4 @@
-# === APEX LINUX BASE ===
-# Shared by KDE, GNOME, and Minimal Editions
-
-# 1. SYSTEM SETTINGS
+# === APEX LINUX BASE (2026 Modern Edition) ===
 lang en_US.UTF-8
 keyboard us
 timezone UTC
@@ -10,32 +7,35 @@ firewall --enabled --service=mdns
 xconfig --startxonboot
 zerombr
 clearpart --all --initlabel
-part / --size 8192 --fstype ext4
 
-# Root Password
+# === 2026 STORAGE LAYOUT (BTRFS) ===
+# This enables snapshots, compression, and proper Fedora standards.
+reqpart
+part /boot/efi --size 512 --fstype efi
+part /boot     --size 1024 --fstype ext4
+part btrfs.01  --size 8192 --grow --fstype btrfs
+btrfs none --label=fedora btrfs.01
+btrfs /     --subvol --name=root  label=fedora
+btrfs /home --subvol --name=home  label=fedora
+
 rootpw --lock --iscrypted locked
 
-# FIX: Prevent Build Crash (ModemManager MOVED to %post)
-services --enabled=NetworkManager --disabled=sshd
+# FIX: Disable Media Check (Fixes "Check Failed" loops)
+bootloader --append="rd.live.check=0 rhgb quiet"
 
-shutdown
-
-# FIX: FORCE DISABLE MEDIA CHECK
-bootloader --append="rd.live.check=0"
-
-# 2. NETWORK & REPOS
+# NETWORK
 network --bootproto=dhcp --device=link --activate
 url --mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=fedora-43&arch=$basearch
 repo --name=updates --mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=updates-released-f43&arch=$basearch
-repo --name=apex-core --baseurl=https://download.copr.fedorainfracloud.org/results/ackerman/apex-core/fedora-43-$basearch/
+# Add your COPR here if you have one later
+# repo --name=apex-core --baseurl=...
 
-# 3. BASE PACKAGES
 %packages
-# Kernel & Hardware
 @core
 @hardware-support
 kernel
 kernel-modules
+kernel-modules-extra
 linux-firmware
 grub2-efi-x64
 shim-x64
@@ -43,63 +43,53 @@ efibootmgr
 grub2-efi-x64-cdboot
 syslinux
 
-# GLOBAL FONTS
+# FONTS
 @fonts
 google-noto-sans-fonts
 google-noto-serif-fonts
 google-noto-emoji-fonts
-google-noto-sans-bengali-fonts
-google-noto-sans-arabic-fonts
-google-noto-sans-cjk-fonts
-google-noto-sans-devanagari-fonts
 
-# Live Tools
+# LIVE TOOLS (CRITICAL UPDATES)
 dracut-live
-# CRITICAL FIX: Adds 'get_url_handler' command to prevent boot crash
 dracut-network
+dracut-config-generic  # Essential for broad hardware support
 livesys-scripts
+plymouth
+plymouth-system-theme
 
-# Essential Tools
+# MODERN UTILITIES
 git
 wget
+curl
 nano
 htop
-btop
-unzip
-tar
-xz
 fastfetch
 ntfs-3g
-ntfs-3g-system-compression
-exfatprogs
+btrfs-progs
 dosfstools
 fuse
 
-# REMOVE ANACONDA
+# REMOVE ANACONDA (We use Calamares)
 -anaconda*
--anaconda-core
--anaconda-gui
--anaconda-widgets
--anaconda-tui
--gnome-kiosk
--initial-setup
--initial-setup-gui
+-initial-setup*
 %end
 
 %post
-# 1. SYSTEM IDENTITY
+# 1. IDENTITY
 sed -i 's/^NAME=.*$/NAME="Apex Linux"/' /etc/os-release
 sed -i 's/^PRETTY_NAME=.*$/PRETTY_NAME="Apex Linux"/' /etc/os-release
 sed -i 's/^ID=.*$/ID=apex/' /etc/os-release
 echo -e "Apex Linux \n \l" > /etc/issue
 
-# 2. ENABLE MODEM MANAGER
+# 2. CRITICAL FIX: DRACUT NETWORK CRASH
+# The "get_url_handler" error happens because livenet is missing dependencies in F43.
+echo 'add_dracutmodules+=" network livenet "' > /etc/dracut.conf.d/apex-live.conf
+
+# 3. SERVICES
 systemctl enable ModemManager || true
+systemctl mask speech-dispatcherd || true
 
-# 3. DISABLE SPEECH DISPATCHER
-systemctl disable speech-dispatcherd || true
-
-# 4. USER SETUP
+# 4. USER
 useradd -m -c "Live System User" liveuser
 passwd -d liveuser > /dev/null
 usermod -aG wheel liveuser
