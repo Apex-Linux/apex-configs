@@ -1,5 +1,4 @@
-# === APEX LINUX BRANDING (Final Master - Potrace Fix) ===
-# Features: Potrace added, Libadwaita Fixed, DNS Fixed, Themes Enforced
+# === APEX LINUX BRANDING (Dracut Kernel Fix) ===
 
 %packages
 calamares
@@ -12,7 +11,7 @@ sed
 ImageMagick
 wget
 tar
-# COMPILATION & CONVERSION DEPENDENCIES (CRITICAL)
+# CRITICAL DEPENDENCIES
 gcc
 libadwaita-devel
 gtk4-devel
@@ -20,12 +19,12 @@ papirus-icon-theme
 potrace
 %end
 
-# === STEP 1: ASSET INJECTION & COMPILATION (DNS Method) ===
+# === STEP 1: ASSET INJECTION & COMPILATION ===
 %post --erroronfail
 set -e
-echo ">>> [CHROOT] STARTING ASSET INJECTION (DNS METHOD) <<<"
+echo ">>> [CHROOT] STARTING ASSET INJECTION <<<"
 
-# 1. FIX DNS (Symlink Smash - Critical Fix)
+# 1. FIX DNS (Symlink Smash)
 rm -f /etc/resolv.conf
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 echo "nameserver 1.1.1.1" >> /etc/resolv.conf
@@ -40,7 +39,7 @@ if ! git clone --depth 1 --verbose https://github.com/Apex-Linux/apex-configs.gi
     exit 1
 fi
 
-# 3. DOWNLOAD BIBATA CURSOR
+# 3. DOWNLOAD BIBATA
 echo ">>> Downloading Bibata Cursor..."
 wget -O /tmp/apex-assets/Bibata.tar.xz https://github.com/ful1e5/Bibata_Cursor/releases/download/v2.0.7/Bibata-Modern-Ice.tar.xz
 
@@ -55,29 +54,24 @@ if [ ! -f /tmp/apex-assets/Bibata.tar.xz ]; then
 fi
 
 # 5. INSTALL ASSETS
-echo ">>> Installing Branding Assets..."
+echo ">>> Installing Assets..."
 mkdir -p /usr/share/apex-linux/
 mkdir -p /usr/share/calamares/branding/apex/
 cp -f /tmp/apex-assets/iso/branding/calamares/* /usr/share/calamares/branding/apex/
 cp -f /tmp/apex-assets/iso/branding/logo.txt /usr/share/apex-linux/logo.txt
 
-# 6. INSTALL BIBATA CURSOR
-echo ">>> Installing Bibata..."
+# 6. INSTALL BIBATA
 tar -xf /tmp/apex-assets/Bibata.tar.xz -C /usr/share/icons/
 
-# 7. COMPILE & INSTALL APEX UPDATER
+# 7. COMPILE APEX UPDATER
 echo ">>> Compiling Apex Updater..."
 APP_SRC="/tmp/apex-assets/apps/apex-updater"
 if [ -f "$APP_SRC/apex-updater.c" ]; then
-    # COMPILER FIX: Added 'libadwaita-1'
     gcc -o /usr/bin/apex-updater "$APP_SRC/apex-updater.c" $(pkg-config --cflags --libs gtk4 libadwaita-1)
-    
-    # Install Assets
     cp "$APP_SRC/icon.png" /usr/share/pixmaps/apex-updater.png
     mkdir -p /usr/share/apex-updater
     cp "$APP_SRC/logo.png" /usr/share/apex-updater/logo.png
     
-    # Generate Desktop Entry
     cat > /usr/share/applications/apex-updater.desktop << 'EOF'
 [Desktop Entry]
 Name=Apex Updater
@@ -90,35 +84,28 @@ Categories=System;Settings;
 StartupNotify=true
 EOF
     
-    # Autostart
-    echo ">>> Enabling Updater Autostart..."
     mkdir -p /etc/xdg/autostart
     ln -sf /usr/share/applications/apex-updater.desktop /etc/xdg/autostart/apex-updater.desktop
-    
-    echo "✅ Apex Updater Compiled & Installed."
-else
-    echo "⚠️ Updater source code not found. Skipping."
+    echo "✅ Apex Updater Installed."
 fi
 
 # 8. CLEANUP
 rm -rf /tmp/apex-assets
 rm -f /etc/resolv.conf
-echo ">>> [CHROOT] ASSETS INSTALLED & NETWORK CLEANED <<<"
+echo ">>> [CHROOT] ASSETS INSTALLED <<<"
 %end
 
-# === STEP 2: THEME ENFORCER (Papirus & Bibata) ===
+# === STEP 2: THEME ENFORCER ===
 %post --erroronfail
 set -e
 echo ">>> [CHROOT] ENFORCING THEMES <<<"
 
-# 1. System-Wide Defaults
 mkdir -p /usr/share/icons/default
 cat > /usr/share/icons/default/index.theme << 'EOF'
 [Icon Theme]
 Inherits=Bibata-Modern-Ice
 EOF
 
-# 2. GTK Settings
 mkdir -p /etc/gtk-3.0
 cat > /etc/gtk-3.0/settings.ini << 'EOF'
 [Settings]
@@ -127,7 +114,6 @@ gtk-cursor-theme-name=Bibata-Modern-Ice
 gtk-theme-name=Adwaita-dark
 EOF
 
-# 3. KDE Plasma Settings
 mkdir -p /etc/skel/.config
 cat > /etc/skel/.config/kcminputrc << 'EOF'
 [Mouse]
@@ -142,41 +128,30 @@ ColorScheme=BreezeDark
 Name=Breeze Dark
 EOF
 
-# 4. Root Settings
 mkdir -p /root/.config
 cp /etc/skel/.config/kcminputrc /root/.config/
 cp /etc/skel/.config/kdeglobals /root/.config/
-
-echo ">>> [CHROOT] THEMES LOCKED IN <<<"
 %end
 
-# === STEP 3: KDE DOCK & START MENU POLISH ===
+# === STEP 3: KDE POLISH ===
 %post --erroronfail
 set -e
-echo ">>> [CHROOT] POLISHING KDE DOCK & START MENU <<<"
+echo ">>> [CHROOT] POLISHING KDE <<<"
 SQUID_ICON="/usr/share/calamares/branding/apex/squid.png"
 
-# 1. REMOVE DISCOVER
+# Remove Discover
 LAYOUT_FILE="/usr/share/plasma/layout-templates/org.kde.plasma.desktop.defaultPanel/contents/layout.js"
 if [ -f "$LAYOUT_FILE" ]; then
     sed -i '/org.kde.discover/d' "$LAYOUT_FILE"
 fi
 
-# 2. BRAND START MENU (Requires potrace package)
-echo ">>> Branding Start Menu..."
+# Brand Start Menu
 if command -v magick >/dev/null 2>&1; then
-    # Convert PNG to SVG (Vector Trace)
     magick "$SQUID_ICON" /tmp/start-here.svg
-    # Resize PNG for backup
     magick "$SQUID_ICON" -resize 48x48 /tmp/start-here.png
-    
-    # Apply to Papirus
     find /usr/share/icons/Papirus-Dark -name "start-here*" -exec cp /tmp/start-here.svg {} \;
-    # Apply to Pixmaps
     cp /tmp/start-here.png /usr/share/pixmaps/start-here.png
     cp /tmp/start-here.png /usr/share/pixmaps/system-logo-white.png
-else
-    echo "⚠️ ImageMagick not found, skipping icon branding."
 fi
 gtk-update-icon-cache -f /usr/share/icons/Papirus-Dark/ || true
 %end
@@ -192,7 +167,7 @@ sed -i 's/^HOME_URL=.*$/HOME_URL="https:\/\/github.com\/Apex-Linux"/' /etc/os-re
 echo -e "Apex Linux 2026.1 \n \l" > /etc/issue
 %end
 
-# === STEP 5: PLYMOUTH THEME (Resized) ===
+# === STEP 5: PLYMOUTH THEME (KERNEL FIX) ===
 %post --erroronfail
 set -e
 echo ">>> [CHROOT] FIXING BOOT SPLASH <<<"
@@ -231,7 +206,22 @@ logo_sprite = Sprite(logo_image);
 logo_sprite.SetPosition(logo_x, logo_y, 100);
 EOF
 
-plymouth-set-default-theme -R apex
+# FIX: Do not use -R here. It tries to build for the running Azure kernel.
+plymouth-set-default-theme apex
+
+# FIX: Find the INSTALLED kernel version inside the chroot
+KVER=$(ls /lib/modules | sort -V | tail -n 1)
+if [ -n "$KVER" ]; then
+    echo ">>> Rebuilding initramfs for kernel: $KVER"
+    # Build for the specific Fedora kernel we just installed
+    dracut --force --kver "$KVER"
+else
+    echo "❌ [ERROR] Could not detect installed kernel version!"
+    ls -l /lib/modules
+    exit 1
+fi
+
+echo ">>> [CHROOT] PLYMOUTH FIXED <<<"
 %end
 
 # === STEP 6: VISUAL SEARCH & DESTROY ===
@@ -267,7 +257,7 @@ EOF
 chmod +x /usr/bin/neofetch
 %end
 
-# === STEP 8: CALAMARES UI POLISH (Qt6 Modern + 1GB EFI) ===
+# === STEP 8: CALAMARES UI POLISH ===
 %post --erroronfail
 set -e
 echo ">>> [CHROOT] CONFIGURING CALAMARES UI <<<"
