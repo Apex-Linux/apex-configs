@@ -3,34 +3,51 @@
 
 %packages
 calamares
+curl
+qt6-qtsvg
+
 %end
 
-%post
+%post --erroronfail
+
+echo ">>> STARTING APEX BRANDING SETUP <<<"
+
+# Function to download with retry and ERROR CHECKING
+download_asset() {
+    url="$1"
+    dest="$2"
+    echo "Downloading $url to $dest..."
+    # -f fails on HTTP errors, -L follows redirects
+    curl -L -f --retry 3 --retry-delay 2 -o "$dest" "$url"
+    
+    if [ ! -s "$dest" ]; then
+        echo "ERROR: Failed to download $dest (File is empty or missing)"
+        exit 1
+    fi
+}
+
 # --- 1. DOWNLOAD ASSETS ---
 mkdir -p /usr/share/apex-linux
 
-# A. ASCII Art (For Terminal Fetch)
-wget https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/logo.txt -O /usr/share/apex-linux/logo.txt
+# A. ASCII Art
+download_asset "https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/logo.txt" "/usr/share/apex-linux/logo.txt"
 
-# B. Main Icon (Square "A" Logo) -> squid.png
-wget https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/calamares/squid.png -O /usr/share/apex-linux/squid.png
+# B. Main Logo (Squid)
+download_asset "https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/calamares/squid.png" "/usr/share/apex-linux/squid.png"
 
-# C. Welcome Banner (Rectangular Text) -> welcome.png
-wget https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/calamares/welcome.png -O /usr/share/apex-linux/welcome.png
+# C. Welcome Banner
+download_asset "https://raw.githubusercontent.com/Apex-Linux/apex-configs/main/iso/branding/calamares/welcome.png" "/usr/share/apex-linux/welcome.png"
 
-# FIX PERMISSIONS
+
 chmod -R 755 /usr/share/apex-linux
 
-# --- 2. UNIVERSAL SHELL BRANDING (FORCED) ---
-
-# A. BASH GLOBAL (Inject into /etc/bashrc for guaranteed execution)
+# --- 2. UNIVERSAL SHELL BRANDING ---
 cat >> /etc/bashrc << 'EOF'
-# Apex Linux Branding
 alias fastfetch='fastfetch --logo /usr/share/apex-linux/logo.txt --logo-type file --logo-color-1 blue'
 alias neofetch='neofetch --source /usr/share/apex-linux/logo.txt --ascii_distro "Apex Linux"'
+alias screenfetch='screenfetch -A "Apex Linux" -D "Apex Linux"'
 EOF
 
-# B. FISH SHELL
 mkdir -p /etc/fish/conf.d
 cat > /etc/fish/conf.d/apex-branding.fish << 'EOF'
 function fastfetch
@@ -41,23 +58,19 @@ function neofetch
 end
 EOF
 
-# --- 3. CALAMARES BRANDING (NUCLEAR FIX) ---
+# --- 3. CALAMARES BRANDING SETUP ---
 
-# A. Delete Fedora Defaults
+# A. Delete Defaults
 rm -rf /usr/share/calamares/branding/fedora
 rm -rf /usr/share/calamares/branding/default
 rm -rf /usr/share/calamares/branding/fedoraproject
 
-# B. Create Apex Branding Directory
+# B. Create Apex Branding
 mkdir -p /usr/share/calamares/branding/apex
-
-# C. Place Images (STRICT MAPPING)
-# logo.png = The Square Icon (Squid)
 cp /usr/share/apex-linux/squid.png /usr/share/calamares/branding/apex/logo.png
-# welcome.png = The Rectangle Banner (Welcome)
 cp /usr/share/apex-linux/welcome.png /usr/share/calamares/branding/apex/welcome.png
 
-# D. branding.desc
+# C. branding.desc
 cat > /usr/share/calamares/branding/apex/branding.desc << 'EOF'
 ---
 componentName:  apex
@@ -98,7 +111,7 @@ style:
    SidebarBackgroundCurrent: "#31363b"
 EOF
 
-# E. show.qml (Slideshow)
+# D. show.qml
 cat > /usr/share/calamares/branding/apex/show.qml << 'EOF'
 import QtQuick 2.0;
 import calamares.slideshow 1.0;
@@ -125,7 +138,7 @@ Presentation
 }
 EOF
 
-# F. navigation.qml (Right Bar)
+# E. navigation.qml
 cat > /usr/share/calamares/branding/apex/navigation.qml << 'EOF'
 import io.calamares.ui 1.0
 import io.calamares.core 1.0
@@ -168,7 +181,7 @@ Rectangle {
 }
 EOF
 
-# G. sidebar.qml (Bottom Bar)
+# F. sidebar.qml
 cat > /usr/share/calamares/branding/apex/sidebar.qml << 'EOF'
 import io.calamares.ui 1.0
 import io.calamares.core 1.0
@@ -198,8 +211,8 @@ Rectangle {
 }
 EOF
 
-# --- 4. APPLY SETTINGS (FORCE OVERWRITE) ---
-# Previous SED commands failed. We now rewrite the config file to be sure.
+# --- 4. OVERWRITE SETTINGS.CONF (CachyOS Style) ---
+# We overwrite the file completely instead of using sed.
 cat > /etc/calamares/settings.conf << 'EOF'
 modules-search: [ local ]
 instances:
@@ -266,7 +279,6 @@ chmod +x /home/liveuser/Desktop/install-apex.desktop
 chown -R liveuser:liveuser /home/liveuser
 
 # --- 6. OVERWRITE SYSTEM ICONS (GLOBAL) ---
-# We overwrite Fedora icons with squid.png
 cp /usr/share/apex-linux/squid.png /usr/share/pixmaps/fedora-logo-sprite.png
 cp /usr/share/apex-linux/squid.png /usr/share/pixmaps/fedora-logo.png 2>/dev/null || true
 cp /usr/share/apex-linux/squid.png /usr/share/icons/hicolor/48x48/apps/fedora-logo-icon.png 2>/dev/null || true
@@ -274,4 +286,6 @@ cp /usr/share/apex-linux/squid.png /usr/share/icons/hicolor/scalable/apps/fedora
 cp /usr/share/apex-linux/squid.png /usr/share/icons/hicolor/scalable/apps/start-here.svg 2>/dev/null || true
 cp /usr/share/apex-linux/squid.png /usr/share/icons/hicolor/scalable/places/start-here.svg 2>/dev/null || true
 gtk-update-icon-cache /usr/share/icons/hicolor/
+
+echo ">>> APEX BRANDING COMPLETE <<<"
 %end

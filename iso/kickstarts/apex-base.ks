@@ -15,13 +15,14 @@ part / --size 8192 --fstype ext4
 # Root Password
 rootpw --lock --iscrypted locked
 
-# FIX 1: Prevent Build Crash (ModemManager MOVED to %post)
+# FIX: Prevent Build Crash (ModemManager MOVED to %post)
 services --enabled=NetworkManager --disabled=sshd
 
 shutdown
 
-# FIX 2: DISABLE MEDIA CHECK (Prevents "Media Check Failed" Crash)
-bootloader --location=none --append="rd.live.check=0"
+# FIX: FORCE DISABLE MEDIA CHECK
+# We remove 'location=none' to ensure LMC respects the append line.
+bootloader --append="rd.live.check=0"
 
 # 2. NETWORK & REPOS
 network --bootproto=dhcp --device=link --activate
@@ -92,7 +93,6 @@ sed -i 's/^ID=.*$/ID=apex/' /etc/os-release
 echo -e "Apex Linux \n \l" > /etc/issue
 
 # 2. ENABLE MODEM MANAGER (SAFE MODE)
-# Must be here to avoid build crash
 systemctl enable ModemManager || true
 
 # 3. USER SETUP
