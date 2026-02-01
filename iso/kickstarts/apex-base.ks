@@ -21,7 +21,6 @@ services --enabled=NetworkManager --disabled=sshd
 shutdown
 
 # FIX: FORCE DISABLE MEDIA CHECK
-# We remove 'location=none' to ensure LMC respects the append line.
 bootloader --append="rd.live.check=0"
 
 # 2. NETWORK & REPOS
@@ -56,6 +55,8 @@ google-noto-sans-devanagari-fonts
 
 # Live Tools
 dracut-live
+# CRITICAL FIX: Adds 'get_url_handler' command to prevent boot crash
+dracut-network
 livesys-scripts
 
 # Essential Tools
@@ -92,10 +93,13 @@ sed -i 's/^PRETTY_NAME=.*$/PRETTY_NAME="Apex Linux"/' /etc/os-release
 sed -i 's/^ID=.*$/ID=apex/' /etc/os-release
 echo -e "Apex Linux \n \l" > /etc/issue
 
-# 2. ENABLE MODEM MANAGER (SAFE MODE)
+# 2. ENABLE MODEM MANAGER
 systemctl enable ModemManager || true
 
-# 3. USER SETUP
+# 3. DISABLE SPEECH DISPATCHER
+systemctl disable speech-dispatcherd || true
+
+# 4. USER SETUP
 useradd -m -c "Live System User" liveuser
 passwd -d liveuser > /dev/null
 usermod -aG wheel liveuser

@@ -6,33 +6,28 @@ calamares
 qt6-qtsvg
 %end
 
-# === CRITICAL STEP: COPY FILES FROM GITHUB WORKSPACE ===
+# === STEP 1: COPY ASSETS FROM GITHUB ===
 %post --nochroot --erroronfail
 echo ">>> COPYING BRANDING ASSETS FROM GITHUB WORKSPACE <<<"
-
-# Create destination inside the ISO root
 mkdir -p $INSTALL_ROOT/usr/share/apex-linux/
-
-# Copy the branding folder from the GitHub Runner path
+# Copy all assets (images/logos) from the repo
 cp -r /__w/apex-configs/apex-configs/iso/branding/* $INSTALL_ROOT/usr/share/apex-linux/
-
 echo ">>> COPY COMPLETE <<<"
 %end
 
-# === REGULAR SETUP (INSIDE THE ISO) ===
+# === STEP 2: CONFIGURE SYSTEM ===
 %post --erroronfail
 
 echo ">>> CONFIGURING APEX BRANDING <<<"
-
-# FIX PERMISSIONS (Since we copied them from outside)
 chmod -R 755 /usr/share/apex-linux
 
 # --- 1. UNIVERSAL SHELL BRANDING ---
-cat >> /etc/bashrc << 'EOF'
+# We use z99-apex.sh to ensure this runs LAST and overrides Fedora
+cat > /etc/profile.d/z99-apex.sh << 'EOF'
 alias fastfetch='fastfetch --logo /usr/share/apex-linux/logo.txt --logo-type file --logo-color-1 blue'
 alias neofetch='neofetch --source /usr/share/apex-linux/logo.txt --ascii_distro "Apex Linux"'
-alias screenfetch='screenfetch -A "Apex Linux" -D "Apex Linux"'
 EOF
+chmod +x /etc/profile.d/z99-apex.sh
 
 mkdir -p /etc/fish/conf.d
 cat > /etc/fish/conf.d/apex-branding.fish << 'EOF'
@@ -51,17 +46,57 @@ rm -rf /usr/share/calamares/branding/fedora
 rm -rf /usr/share/calamares/branding/default
 rm -rf /usr/share/calamares/branding/fedoraproject
 
-# B. Create Apex Branding
+# B. Create Apex Branding Directory
 mkdir -p /usr/share/calamares/branding/apex
 
-# C. MOVE IMAGES & CONFIG
+# C. COPY IMAGES
+# We use 'squid.png' here because your branding.desc asks for 'squid.png'
 cp /usr/share/apex-linux/calamares/squid.png /usr/share/calamares/branding/apex/squid.png
 cp /usr/share/apex-linux/calamares/welcome.png /usr/share/calamares/branding/apex/welcome.png
 
-# Copy the branding.desc you provided (It was copied in the folder above)
-cp /usr/share/apex-linux/calamares/branding.desc /usr/share/calamares/branding/apex/branding.desc
+# D. GENERATE BRANDING.DESC (CRITICAL FIX)
+# We WRITE this file here to ensure it exists. No more missing file errors.
+cat > /usr/share/calamares/branding/apex/branding.desc << 'EOF'
+---
+componentName:  apex
+welcomeStyleCalamares:   true
+welcomeExpandingLogo:   true
+windowExpanding:    normal
+windowSize: 800px,520px
+windowPlacement: center
+sidebar: qml,bottom
+navigation: qml,right
 
-# D. GENERATE QML FILES (If they aren't in the repo, we generate them safely here)
+strings:
+    productName:         "Apex Linux"
+    shortProductName:    "Apex"
+    version:             "2026.1"
+    shortVersion:        "2026.1"
+    versionedName:       "Apex Linux 2026.1"
+    shortVersionedName:  "Apex 2026"
+    bootloaderEntryName: "Apex Linux"
+    productUrl:          "https://github.com/Apex-Linux"
+    supportUrl:          "https://github.com/Apex-Linux"
+    knownIssuesUrl:      "https://github.com/Apex-Linux"
+    releaseNotesUrl:     "https://github.com/Apex-Linux"
+    donateUrl:           "https://github.com/Apex-Linux"
+
+images:
+    productLogo:         "squid.png"
+    productIcon:         "squid.png"
+    productWelcome:      "welcome.png"
+
+slideshow:               "show.qml"
+slideshowAPI:            1
+
+style:
+   sidebarBackground:    "#292f34"
+   sidebarText:          "#FFFFFF"
+   sidebarTextSelect:    "#292f34"
+   sidebarTextHighlight: "#00BFFF"
+EOF
+
+# E. GENERATE QML FILES
 cat > /usr/share/calamares/branding/apex/show.qml << 'EOF'
 import QtQuick 2.0;
 import calamares.slideshow 1.0;
@@ -206,7 +241,7 @@ hide-back-and-next-during-exec: false
 quit-at-end: false
 EOF
 
-# --- 4. DESKTOP SHORTCUT & ICONS ---
+# --- 4. DESKTOP SHORTCUT ---
 mkdir -p /home/liveuser/.config/autostart
 cat > /home/liveuser/.config/autostart/calamares.desktop << 'EOF'
 [Desktop Entry]
@@ -225,7 +260,7 @@ cp /home/liveuser/.config/autostart/calamares.desktop /home/liveuser/Desktop/ins
 chmod +x /home/liveuser/Desktop/install-apex.desktop
 chown -R liveuser:liveuser /home/liveuser
 
-# --- 5. OVERWRITE SYSTEM ICONS (GLOBAL) ---
+# --- 5. SYSTEM ICONS ---
 cp /usr/share/apex-linux/calamares/squid.png /usr/share/pixmaps/fedora-logo-sprite.png
 cp /usr/share/apex-linux/calamares/squid.png /usr/share/pixmaps/fedora-logo.png 2>/dev/null || true
 cp /usr/share/apex-linux/calamares/squid.png /usr/share/icons/hicolor/48x48/apps/fedora-logo-icon.png 2>/dev/null || true
