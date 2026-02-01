@@ -1,5 +1,5 @@
-# === APEX LINUX BRANDING (Definitive Edition) ===
-# Features: Split-Stage Network (Fixes DNS Error), Nuclear Replacement, Fail-Fast
+# === APEX LINUX BRANDING (Persistence Fix 2026) ===
+# Strategy: Split-Stage Network + Persistent Handoff (/opt)
 
 %packages
 calamares
@@ -12,104 +12,91 @@ sed
 ImageMagick
 %end
 
-# === STEP 1: THE HEIST (Download Outside the Jail) ===
-# CRITICAL FIX: We use --nochroot. This runs on the BUILDER (which has internet).
-# We clone directly into the image's /tmp directory ($INSTALL_ROOT/tmp).
+# === STEP 1: THE HEIST (Download Outside) ===
+# We use --nochroot to access the internet from the builder.
+# We save to /opt because /tmp gets hidden by a RAM disk inside the chroot.
 %post --nochroot --erroronfail
 set -e
 echo ">>> [HOST] STARTING ASSET DOWNLOAD (NOCHROOT) <<<"
 
-# 1. Clean any previous run
-rm -rf $INSTALL_ROOT/tmp/apex-assets
+# 1. Clone the repo directly into the image's /opt directory
+# This directory persists into the chroot.
+rm -rf $INSTALL_ROOT/opt/apex-assets
+git clone --depth 1 https://github.com/Apex-Linux/apex-configs.git $INSTALL_ROOT/opt/apex-assets
 
-# 2. Clone the repo (Using Host Network)
-# This fixes "Could not resolve host: github.com"
-git clone --depth 1 https://github.com/Apex-Linux/apex-configs.git $INSTALL_ROOT/tmp/apex-assets
-
-# 3. Verify the loot (Fail fast if empty)
-if [ ! -f $INSTALL_ROOT/tmp/apex-assets/iso/branding/logo.txt ]; then
+# 2. Verify the loot
+if [ ! -f $INSTALL_ROOT/opt/apex-assets/iso/branding/logo.txt ]; then
     echo "❌ [HOST] ERROR: Download failed. logo.txt missing!"
     exit 1
 fi
 
-echo ">>> [HOST] ASSETS STAGED SUCCESSFULLY <<<"
+echo ">>> [HOST] ASSETS STAGED IN /OPT <<<"
 %end
 
 # === STEP 2: INSTALLATION (Inside the Jail) ===
-# Now we are inside the image. We don't need internet anymore.
 %post --erroronfail
 set -e
 echo ">>> [CHROOT] INSTALLING ASSETS <<<"
 
-# 1. Verify Staged Assets
-[ -d /tmp/apex-assets ] || { echo "❌ [CHROOT] Assets not found in /tmp!"; exit 1; }
+# 1. Verify Staged Assets in /opt
+[ -d /opt/apex-assets ] || { echo "❌ [CHROOT] Assets not found in /opt!"; exit 1; }
 
 # 2. Create System Directories
 mkdir -p /usr/share/apex-linux/
 mkdir -p /usr/share/calamares/branding/apex/
 
-# 3. Install Assets (Exact Repo Files)
-# We copy EVERYTHING from your calamares folder (squid.png, welcome.png, branding.desc)
-cp -f /tmp/apex-assets/iso/branding/calamares/* /usr/share/calamares/branding/apex/
-cp -f /tmp/apex-assets/iso/branding/logo.txt /usr/share/apex-linux/logo.txt
+# 3. Install Assets
+cp -f /opt/apex-assets/iso/branding/calamares/* /usr/share/calamares/branding/apex/
+cp -f /opt/apex-assets/iso/branding/logo.txt /usr/share/apex-linux/logo.txt
 
-# 4. SELF-HEALING: Patch branding.desc if 'slideshow' is missing
-# (Your repo might be missing this key, so we auto-add it to prevent a crash)
+# 4. Patch branding.desc
 if ! grep -q "slideshow:" /usr/share/calamares/branding/apex/branding.desc; then
-    echo "⚠️ [CHROOT] Patching missing 'slideshow' key in branding.desc..."
+    echo "⚠️ [CHROOT] Patching missing 'slideshow' key..."
     echo 'slideshow: "show.qml"' >> /usr/share/calamares/branding/apex/branding.desc
 fi
 
-# Cleanup
-rm -rf /tmp/apex-assets
+# Cleanup the staging area
+rm -rf /opt/apex-assets
 echo ">>> [CHROOT] ASSETS INSTALLED <<<"
 %end
 
-# === STEP 3: IDENTITY SURGERY (The Nobara Method) ===
+# === STEP 3: IDENTITY SURGERY ===
 %post --erroronfail
 set -e
 echo ">>> [CHROOT] PERFORMING IDENTITY SURGERY <<<"
 
-# 1. Hack os-release (Deep Identity Change)
 sed -i 's/^NAME=.*$/NAME="Apex Linux"/' /etc/os-release
 sed -i 's/^ID=.*$/ID=apex/' /etc/os-release
 sed -i 's/^PRETTY_NAME=.*$/PRETTY_NAME="Apex Linux 2026"/' /etc/os-release
-# IMPORTANT: Keep ID_LIKE=fedora so DNF and Drivers still work!
 sed -i 's/^ID_LIKE=.*$/ID_LIKE="fedora"/' /etc/os-release
 sed -i 's/^HOME_URL=.*$/HOME_URL="https:\/\/github.com\/Apex-Linux"/' /etc/os-release
-
-# 2. Hack Login Screen Text
 echo -e "Apex Linux 2026.1 \n \l" > /etc/issue
-echo ">>> [CHROOT] SYSTEM IDENTITY UPDATED <<<"
+
+echo ">>> [CHROOT] IDENTITY CHANGED <<<"
 %end
 
-# === STEP 4: VISUAL SEARCH & DESTROY (The Nuke) ===
+# === STEP 4: VISUAL SEARCH & DESTROY ===
 %post --erroronfail
 set -e
 echo ">>> [CHROOT] REPLACING FEDORA LOGOS <<<"
 
 SOURCE_ICON="/usr/share/calamares/branding/apex/squid.png"
 
-# Find ANY file with 'fedora' and 'logo' in the name and overwrite it.
-# This covers start menus, plymouth themes, and random icons.
 find /usr/share/pixmaps /usr/share/icons -type f \( -name "*fedora*logo*.png" -o -name "*fedora*logo*.svg" -o -name "*system-logo*.png" \) | while read -r FILE; do
     if [ -f "$FILE" ]; then
-        # echo "  -> Nuking $FILE"
         cp -f "$SOURCE_ICON" "$FILE"
     fi
 done
 
-# Force Icon Cache Update
 gtk-update-icon-cache -f /usr/share/icons/hicolor/ || true
 echo ">>> [CHROOT] FEDORA VISUALS ERADICATED <<<"
 %end
 
-# === STEP 5: ASCII INTERCEPTOR (Fastfetch Hijack) ===
+# === STEP 5: ASCII INTERCEPTOR ===
 %post --erroronfail
 set -e
 echo ">>> [CHROOT] INSTALLING ASCII INTERCEPTOR <<<"
 
-# 1. Master Config
 mkdir -p /usr/share/fastfetch/presets
 cat > /usr/share/fastfetch/presets/apex.jsonc << 'EOF'
 {
@@ -130,15 +117,12 @@ cat > /usr/share/fastfetch/presets/apex.jsonc << 'EOF'
 }
 EOF
 
-# 2. Hijack /usr/local/bin/fastfetch
-# This is cleaner than replacing the binary. It survives updates.
 cat > /usr/local/bin/fastfetch << 'EOF'
 #!/bin/bash
 exec /usr/bin/fastfetch --config /usr/share/fastfetch/presets/apex.jsonc "$@"
 EOF
 chmod +x /usr/local/bin/fastfetch
 
-# 3. Hijack Neofetch (Legacy Support)
 cat > /usr/bin/neofetch << 'EOF'
 #!/bin/bash
 exec /usr/local/bin/fastfetch "$@"
@@ -153,11 +137,9 @@ echo ">>> [CHROOT] INTERCEPTOR ACTIVE <<<"
 set -e
 echo ">>> [CHROOT] CONFIGURING CALAMARES <<<"
 
-# A. Cleanup Defaults
 rm -rf /usr/share/calamares/branding/fedora
 rm -rf /usr/share/calamares/branding/default
 
-# B. Partition Config (Btrfs Default + Choices)
 cat > /etc/calamares/modules/partition.conf << 'EOF'
 efiSystemPartition: "/boot/efi"
 userSwapChoices:
@@ -174,7 +156,6 @@ defaultFileSystemType: "btrfs"
 availableFileSystemTypes: ["btrfs", "ext4", "xfs", "f2fs"]
 EOF
 
-# C. User Config
 cat > /etc/calamares/modules/users.conf << 'EOF'
 defaultGroups:
     - wheel
@@ -191,7 +172,6 @@ sudoersGroup: wheel
 setRootPassword: false
 EOF
 
-# D. QML Files (Qt6 Modern Standard)
 cat > /usr/share/calamares/branding/apex/show.qml << 'EOF'
 import QtQuick
 import calamares.slideshow 1.0
@@ -215,7 +195,6 @@ Presentation {
 }
 EOF
 
-# E. Settings.conf (Sequence)
 cat > /etc/calamares/settings.conf << 'EOF'
 modules-search: [ local ]
 instances:
@@ -262,7 +241,6 @@ hide-back-and-next-during-exec: false
 quit-at-end: false
 EOF
 
-# F. Desktop Shortcut (Using squid.png from repo)
 mkdir -p /home/liveuser/.config/autostart
 cat > /home/liveuser/.config/autostart/calamares.desktop << 'EOF'
 [Desktop Entry]
