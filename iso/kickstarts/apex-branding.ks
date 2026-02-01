@@ -1,4 +1,4 @@
-# === APEX LINUX BRANDING (Verified Master Edition) ===
+# === APEX LINUX BRANDING===
 
 %packages
 calamares
@@ -35,13 +35,18 @@ if ! git clone --depth 1 --verbose https://github.com/Apex-Linux/apex-configs.gi
     exit 1
 fi
 
-# 3. DOWNLOAD BIBATA CURSOR
+# 3. DOWNLOAD BIBATA CURSOR (FIXED URL)
 echo ">>> Downloading Bibata Cursor..."
-wget -O /tmp/apex-assets/Bibata.tar.gz https://github.com/ful1e5/Bibata_Cursor/releases/download/v2.0.7/Bibata-Modern-Ice.tar.gz
+# ERROR FIX: Changed extension from .tar.gz to .tar.xz
+wget -O /tmp/apex-assets/Bibata.tar.xz https://github.com/ful1e5/Bibata_Cursor/releases/download/v2.0.7/Bibata-Modern-Ice.tar.xz
 
 # 4. VERIFY DOWNLOADS
 if [ ! -f /tmp/apex-assets/iso/branding/logo.txt ]; then
     echo "❌ [CHROOT] Logo missing!"
+    exit 1
+fi
+if [ ! -f /tmp/apex-assets/Bibata.tar.xz ]; then
+    echo "❌ [CHROOT] Bibata download failed! (Check URL/Network)"
     exit 1
 fi
 
@@ -54,7 +59,8 @@ cp -f /tmp/apex-assets/iso/branding/logo.txt /usr/share/apex-linux/logo.txt
 
 # 6. INSTALL BIBATA CURSOR
 echo ">>> Installing Bibata..."
-tar -xvf /tmp/apex-assets/Bibata.tar.gz -C /usr/share/icons/
+# ERROR FIX: Using 'tar -xf' which auto-detects .xz format
+tar -xf /tmp/apex-assets/Bibata.tar.xz -C /usr/share/icons/
 
 # 7. COMPILE & INSTALL APEX UPDATER
 echo ">>> Compiling Apex Updater..."
@@ -271,7 +277,6 @@ rm -rf /usr/share/calamares/branding/fedora
 rm -rf /usr/share/calamares/branding/default
 
 # 1. Branding Desc (Dark Mode Colors)
-# FIX CONFIRMED: Using 'sidebarTextCurrent' instead of 'sidebarTextSelect'
 cat > /usr/share/calamares/branding/apex/branding.desc << 'EOF'
 ---
 componentName:  apex
@@ -340,7 +345,6 @@ Rectangle {
 EOF
 
 # 3. Slideshow (Qt6 Modern + Dark Background Fix)
-# FIX CONFIRMED: Rectangle background fixes the white screen
 cat > /usr/share/calamares/branding/apex/show.qml << 'EOF'
 import QtQuick
 import calamares.slideshow 1.0
@@ -364,13 +368,11 @@ EOF
 # 4. Standard Configs (WITH 1GB EFI & GPT DEFAULT)
 cat > /etc/calamares/modules/partition.conf << 'EOF'
 efiSystemPartition: "/boot/efi"
-# POLISH: Force 1024MB (1GB) EFI minimum
 efiSystemPartitionSize: 1024M
 userSwapChoices: [none, small, suspend, file]
 drawNestedPartitions: false
 alwaysShowPartitionLabels: true
 allowManualPartitioning: true
-# POLISH: Default to GPT
 defaultPartitionTableType: "gpt"
 initialPartitioningChoice: erase
 initialSwapChoice: none
