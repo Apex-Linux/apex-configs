@@ -1,5 +1,5 @@
-# === APEX LINUX BRANDING (Persistence Fix 2026) ===
-# Strategy: Split-Stage Network + Persistent Handoff (/opt)
+# === APEX LINUX BRANDING (DNS Injection 2026) ===
+# Strategy: Inject DNS -> Clone Inside -> Install -> Cleanup
 
 %packages
 calamares
@@ -12,55 +12,63 @@ sed
 ImageMagick
 %end
 
-# === STEP 1: THE HEIST (Download Outside) ===
-# We use --nochroot to access the internet from the builder.
-# We save to /opt because /tmp gets hidden by a RAM disk inside the chroot.
-%post --nochroot --erroronfail
-set -e
-echo ">>> [HOST] STARTING ASSET DOWNLOAD (NOCHROOT) <<<"
+# === STEP 1: ASSET INJECTION & DEBUGGING ===
+%post --erroronfail
+set -e # Die immediately if any command fails
 
-# 1. Clone the repo directly into the image's /opt directory
-# This directory persists into the chroot.
-rm -rf $INSTALL_ROOT/opt/apex-assets
-git clone --depth 1 https://github.com/Apex-Linux/apex-configs.git $INSTALL_ROOT/opt/apex-assets
+echo ">>> [CHROOT] STARTING ASSET INJECTION <<<"
 
-# 2. Verify the loot
-if [ ! -f $INSTALL_ROOT/opt/apex-assets/iso/branding/logo.txt ]; then
-    echo "❌ [HOST] ERROR: Download failed. logo.txt missing!"
+# 1. FIX DNS (The "Blindness" Fix)
+# The chroot has no DNS by default. We force Google DNS so we can find GitHub.
+echo "nameserver 8.8.8.8" > /etc/resolv.conf
+echo "nameserver 1.1.1.1" >> /etc/resolv.conf
+
+# 2. CLONE REPO (With Debugging)
+echo ">>> Cloning Apex Configs..."
+rm -rf /tmp/apex-assets
+
+# We use 'git clone' with verbose output.
+# If this fails, we catch the error and print the network status.
+if ! git clone --depth 1 --verbose https://github.com/Apex-Linux/apex-configs.git /tmp/apex-assets; then
+    echo "❌ [ERROR] Git Clone Failed!"
+    echo "--- NETWORK DEBUG ---"
+    cat /etc/resolv.conf
+    curl -I https://github.com
     exit 1
 fi
 
-echo ">>> [HOST] ASSETS STAGED IN /OPT <<<"
-%end
+# 3. VERIFY DOWNLOAD (Did we get the files?)
+echo ">>> Verifying Downloaded Files..."
+if [ ! -f /tmp/apex-assets/iso/branding/logo.txt ]; then
+    echo "❌ [ERROR] Clone succeeded but files are missing!"
+    echo "Contents of /tmp/apex-assets:"
+    ls -R /tmp/apex-assets
+    exit 1
+fi
 
-# === STEP 2: INSTALLATION (Inside the Jail) ===
-%post --erroronfail
-set -e
-echo ">>> [CHROOT] INSTALLING ASSETS <<<"
+echo "✅ Repo cloned successfully. Files are present."
 
-# 1. Verify Staged Assets in /opt
-[ -d /opt/apex-assets ] || { echo "❌ [CHROOT] Assets not found in /opt!"; exit 1; }
-
-# 2. Create System Directories
+# 4. INSTALL ASSETS
 mkdir -p /usr/share/apex-linux/
 mkdir -p /usr/share/calamares/branding/apex/
 
-# 3. Install Assets
-cp -f /opt/apex-assets/iso/branding/calamares/* /usr/share/calamares/branding/apex/
-cp -f /opt/apex-assets/iso/branding/logo.txt /usr/share/apex-linux/logo.txt
+echo ">>> Installing Logo & Calamares Assets..."
+cp -f /tmp/apex-assets/iso/branding/calamares/* /usr/share/calamares/branding/apex/
+cp -f /tmp/apex-assets/iso/branding/logo.txt /usr/share/apex-linux/logo.txt
 
-# 4. Patch branding.desc
+# 5. SELF-HEALING (Patch branding.desc)
 if ! grep -q "slideshow:" /usr/share/calamares/branding/apex/branding.desc; then
-    echo "⚠️ [CHROOT] Patching missing 'slideshow' key..."
+    echo "⚠️ Patching missing 'slideshow' key in branding.desc..."
     echo 'slideshow: "show.qml"' >> /usr/share/calamares/branding/apex/branding.desc
 fi
 
-# Cleanup the staging area
-rm -rf /opt/apex-assets
-echo ">>> [CHROOT] ASSETS INSTALLED <<<"
+# 6. CLEANUP
+rm -rf /tmp/apex-assets
+rm -f /etc/resolv.conf # Remove Google DNS so we don't leak it to the user
+echo ">>> [CHROOT] ASSETS INSTALLED & CLEANED UP <<<"
 %end
 
-# === STEP 3: IDENTITY SURGERY ===
+# === STEP 2: IDENTITY SURGERY ===
 %post --erroronfail
 set -e
 echo ">>> [CHROOT] PERFORMING IDENTITY SURGERY <<<"
@@ -75,13 +83,14 @@ echo -e "Apex Linux 2026.1 \n \l" > /etc/issue
 echo ">>> [CHROOT] IDENTITY CHANGED <<<"
 %end
 
-# === STEP 4: VISUAL SEARCH & DESTROY ===
+# === STEP 3: VISUAL SEARCH & DESTROY ===
 %post --erroronfail
 set -e
 echo ">>> [CHROOT] REPLACING FEDORA LOGOS <<<"
 
 SOURCE_ICON="/usr/share/calamares/branding/apex/squid.png"
 
+# Find and overwrite Fedora logos
 find /usr/share/pixmaps /usr/share/icons -type f \( -name "*fedora*logo*.png" -o -name "*fedora*logo*.svg" -o -name "*system-logo*.png" \) | while read -r FILE; do
     if [ -f "$FILE" ]; then
         cp -f "$SOURCE_ICON" "$FILE"
@@ -92,7 +101,7 @@ gtk-update-icon-cache -f /usr/share/icons/hicolor/ || true
 echo ">>> [CHROOT] FEDORA VISUALS ERADICATED <<<"
 %end
 
-# === STEP 5: ASCII INTERCEPTOR ===
+# === STEP 4: ASCII INTERCEPTOR ===
 %post --erroronfail
 set -e
 echo ">>> [CHROOT] INSTALLING ASCII INTERCEPTOR <<<"
@@ -117,12 +126,14 @@ cat > /usr/share/fastfetch/presets/apex.jsonc << 'EOF'
 }
 EOF
 
+# Hijack fastfetch
 cat > /usr/local/bin/fastfetch << 'EOF'
 #!/bin/bash
 exec /usr/bin/fastfetch --config /usr/share/fastfetch/presets/apex.jsonc "$@"
 EOF
 chmod +x /usr/local/bin/fastfetch
 
+# Hijack neofetch
 cat > /usr/bin/neofetch << 'EOF'
 #!/bin/bash
 exec /usr/local/bin/fastfetch "$@"
@@ -132,7 +143,7 @@ chmod +x /usr/bin/neofetch
 echo ">>> [CHROOT] INTERCEPTOR ACTIVE <<<"
 %end
 
-# === STEP 6: CALAMARES CONFIGURATION ===
+# === STEP 5: CALAMARES CONFIGURATION ===
 %post --erroronfail
 set -e
 echo ">>> [CHROOT] CONFIGURING CALAMARES <<<"
