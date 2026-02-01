@@ -1,5 +1,5 @@
-# === APEX LINUX BRANDING (Final Master Edition) ===
-# Features: Libadwaita Compile, DNS Fix, 1GB EFI, Theme Enforcer, KDE Polish
+# === APEX LINUX BRANDING (Final Master - Potrace Fix) ===
+# Features: Potrace added, Libadwaita Fixed, DNS Fixed, Themes Enforced
 
 %packages
 calamares
@@ -12,11 +12,12 @@ sed
 ImageMagick
 wget
 tar
-# COMPILATION DEPENDENCIES (CRITICAL)
+# COMPILATION & CONVERSION DEPENDENCIES (CRITICAL)
 gcc
 libadwaita-devel
 gtk4-devel
 papirus-icon-theme
+potrace
 %end
 
 # === STEP 1: ASSET INJECTION & COMPILATION (DNS Method) ===
@@ -25,7 +26,6 @@ set -e
 echo ">>> [CHROOT] STARTING ASSET INJECTION (DNS METHOD) <<<"
 
 # 1. FIX DNS (Symlink Smash - Critical Fix)
-# We must remove the broken symlink /etc/resolv.conf before writing to it.
 rm -f /etc/resolv.conf
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 echo "nameserver 1.1.1.1" >> /etc/resolv.conf
@@ -33,7 +33,6 @@ echo "nameserver 1.1.1.1" >> /etc/resolv.conf
 # 2. CLONE REPO
 echo ">>> Cloning Apex Configs..."
 rm -rf /tmp/apex-assets
-# Verbose clone to debug network issues
 if ! git clone --depth 1 --verbose https://github.com/Apex-Linux/apex-configs.git /tmp/apex-assets; then
     echo "❌ [CHROOT] Git Clone Failed!"
     cat /etc/resolv.conf
@@ -41,9 +40,8 @@ if ! git clone --depth 1 --verbose https://github.com/Apex-Linux/apex-configs.gi
     exit 1
 fi
 
-# 3. DOWNLOAD BIBATA CURSOR 
+# 3. DOWNLOAD BIBATA CURSOR
 echo ">>> Downloading Bibata Cursor..."
-
 wget -O /tmp/apex-assets/Bibata.tar.xz https://github.com/ful1e5/Bibata_Cursor/releases/download/v2.0.7/Bibata-Modern-Ice.tar.xz
 
 # 4. VERIFY DOWNLOADS
@@ -65,14 +63,13 @@ cp -f /tmp/apex-assets/iso/branding/logo.txt /usr/share/apex-linux/logo.txt
 
 # 6. INSTALL BIBATA CURSOR
 echo ">>> Installing Bibata..."
-
 tar -xf /tmp/apex-assets/Bibata.tar.xz -C /usr/share/icons/
 
-# 7. COMPILE & INSTALL APEX UPDATER (Fixed)
+# 7. COMPILE & INSTALL APEX UPDATER
 echo ">>> Compiling Apex Updater..."
 APP_SRC="/tmp/apex-assets/apps/apex-updater"
 if [ -f "$APP_SRC/apex-updater.c" ]; then
-
+    # COMPILER FIX: Added 'libadwaita-1'
     gcc -o /usr/bin/apex-updater "$APP_SRC/apex-updater.c" $(pkg-config --cflags --libs gtk4 libadwaita-1)
     
     # Install Assets
@@ -165,13 +162,21 @@ if [ -f "$LAYOUT_FILE" ]; then
     sed -i '/org.kde.discover/d' "$LAYOUT_FILE"
 fi
 
-# 2. BRAND START MENU
-if command -v convert >/dev/null 2>&1; then
-    convert "$SQUID_ICON" /tmp/start-here.svg
-    convert "$SQUID_ICON" -resize 48x48 /tmp/start-here.png
+# 2. BRAND START MENU (Requires potrace package)
+echo ">>> Branding Start Menu..."
+if command -v magick >/dev/null 2>&1; then
+    # Convert PNG to SVG (Vector Trace)
+    magick "$SQUID_ICON" /tmp/start-here.svg
+    # Resize PNG for backup
+    magick "$SQUID_ICON" -resize 48x48 /tmp/start-here.png
+    
+    # Apply to Papirus
     find /usr/share/icons/Papirus-Dark -name "start-here*" -exec cp /tmp/start-here.svg {} \;
+    # Apply to Pixmaps
     cp /tmp/start-here.png /usr/share/pixmaps/start-here.png
     cp /tmp/start-here.png /usr/share/pixmaps/system-logo-white.png
+else
+    echo "⚠️ ImageMagick not found, skipping icon branding."
 fi
 gtk-update-icon-cache -f /usr/share/icons/Papirus-Dark/ || true
 %end
@@ -197,11 +202,10 @@ SQUID_ICON="/usr/share/calamares/branding/apex/squid.png"
 
 mkdir -p "$THEME_DIR"
 
-# Resize Logo (150x150)
-if command -v convert >/dev/null 2>&1; then
-    convert "$SQUID_ICON" -resize 150x150 "$THEME_DIR/watermark.png"
-    convert "$SQUID_ICON" -resize 150x150 "$SPINNER_DIR/watermark.png"
-    convert "$SQUID_ICON" -resize 150x150 "$SPINNER_DIR/fedora-logo-sprite.png"
+if command -v magick >/dev/null 2>&1; then
+    magick "$SQUID_ICON" -resize 150x150 "$THEME_DIR/watermark.png"
+    magick "$SQUID_ICON" -resize 150x150 "$SPINNER_DIR/watermark.png"
+    magick "$SQUID_ICON" -resize 150x150 "$SPINNER_DIR/fedora-logo-sprite.png"
 else
     cp "$SQUID_ICON" "$THEME_DIR/watermark.png"
 fi
@@ -263,7 +267,7 @@ EOF
 chmod +x /usr/bin/neofetch
 %end
 
-# === STEP 8: CALAMARES UI POLISH (Qt6 + 1GB EFI) ===
+# === STEP 8: CALAMARES UI POLISH (Qt6 Modern + 1GB EFI) ===
 %post --erroronfail
 set -e
 echo ">>> [CHROOT] CONFIGURING CALAMARES UI <<<"
@@ -271,7 +275,6 @@ rm -rf /usr/share/calamares/branding/fedora
 rm -rf /usr/share/calamares/branding/default
 
 # Branding Desc
-# FIX: Using 'sidebarTextCurrent' for active step color
 cat > /usr/share/calamares/branding/apex/branding.desc << 'EOF'
 ---
 componentName:  apex
@@ -307,7 +310,7 @@ style:
    sidebarBackgroundCurrent: "#4FD1C5"
 EOF
 
-# Sidebar (Qt6 Modern Import)
+# Sidebar
 cat > /usr/share/calamares/branding/apex/sidebar.qml << 'EOF'
 import QtQuick
 import calamares.branding 1.0
@@ -339,7 +342,7 @@ Rectangle {
 }
 EOF
 
-# Slideshow (Qt6 Modern Import + Background)
+# Slideshow
 cat > /usr/share/calamares/branding/apex/show.qml << 'EOF'
 import QtQuick
 import calamares.slideshow 1.0
