@@ -1,4 +1,4 @@
-# === APEX LINUX BASE (Speed & Freshness Edition) ===
+# === APEX LINUX BASE (Compiler & Theme Ready) ===
 lang en_US.UTF-8
 keyboard us
 timezone UTC
@@ -10,11 +10,10 @@ clearpart --all --initlabel
 
 # === LIVE ISO STORAGE ===
 part / --size 8192 --fstype ext4
-
 rootpw --lock --iscrypted locked
 bootloader --append="rd.live.check=0 rhgb quiet"
 
-# NETWORK & REPOS
+# NETWORK
 network --bootproto=dhcp --device=link --activate
 url --mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=fedora-43&arch=$basearch
 repo --name=updates --mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=updates-released-f43&arch=$basearch
@@ -46,7 +45,18 @@ livesys-scripts
 plymouth
 plymouth-system-theme
 
-# === MANUAL PARTITIONING TOOLS ===
+# === COMPILATION TOOLS (For Apex Updater) ===
+gcc
+make
+gtk4-devel
+libadwaita-devel
+pkgconf
+
+# === THEMES & ICONS (From Repos) ===
+papirus-icon-theme
+gnome-themes-extra
+
+# === FILESYSTEMS ===
 kde-partitionmanager
 btrfs-progs
 xfsprogs
@@ -56,28 +66,25 @@ ntfs-3g
 fuse
 f2fs-tools
 
-# === SHELLS ===
-zsh
-fish
-zsh-syntax-highlighting
-zsh-autosuggestions
-
-# UTILITIES
+# === UTILITIES ===
 git
 wget
 curl
 nano
 htop
 fastfetch
+zsh
+fish
+zsh-syntax-highlighting
+zsh-autosuggestions
 
-# REMOVE ANACONDA
+# CLEANUP
 -anaconda*
 -initial-setup*
 %end
 
 %post --erroronfail
-# === 1. INJECT DNF SPEED TWEAKS ===
-
+# 1. DNF SPEED
 cat > /etc/dnf/dnf.conf <<EOF
 [main]
 gpgcheck=1
@@ -92,35 +99,25 @@ fastestmirror=True
 keepcache=True
 EOF
 
-echo ">>> DNF SPEED TWEAKS APPLIED <<<"
-
-# === 2. FORCE KERNEL UPDATE ===
-echo ">>> FORCING SYSTEM UPDATE TO LATEST KERNEL <<<"
+# 2. FORCE KERNEL UPDATE
 dnf update -y
 
-# === 3. IDENTITY ===
+# 3. IDENTITY
 sed -i 's/^NAME=.*$/NAME="Apex Linux"/' /etc/os-release
 sed -i 's/^PRETTY_NAME=.*$/PRETTY_NAME="Apex Linux"/' /etc/os-release
 sed -i 's/^ID=.*$/ID=apex/' /etc/os-release
 echo -e "Apex Linux \n \l" > /etc/issue
 
-# === 4. DRACUT NETWORK FIX ===
+# 4. DRACUT FIX
 echo 'add_dracutmodules+=" network livenet "' > /etc/dracut.conf.d/apex-live.conf
 
-# === 5. SERVICES ===
-systemctl enable ModemManager || true
-systemctl mask speech-dispatcherd || true
-
-# === 6. USER SETUP ===
+# 5. USER
 useradd -m -c "Live System User" liveuser
 passwd -d liveuser > /dev/null
 usermod -aG wheel liveuser
 echo "%wheel ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/wheel
 chmod 0440 /etc/sudoers.d/wheel
 
-# === 7. CLEANUP (CRITICAL) ===
-# Since you set keepcache=True, we MUST clean it here or your ISO will be huge.
-# The user will still have the dnf.conf settings, just not the dirty cache.
+# 6. CLEANUP CACHE
 dnf clean all
-
 %end
