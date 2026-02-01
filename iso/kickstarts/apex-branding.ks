@@ -1,5 +1,5 @@
-# === APEX LINUX BRANDING (DNS Injection 2026) ===
-# Strategy: Inject DNS -> Clone Inside -> Install -> Cleanup
+# === APEX LINUX BRANDING (Symlink Smash Edition) ===
+# Fixes: Dangling resolv.conf symlink in Chroot
 
 %packages
 calamares
@@ -12,60 +12,55 @@ sed
 ImageMagick
 %end
 
-# === STEP 1: ASSET INJECTION & DEBUGGING ===
+# === STEP 1: ASSET INJECTION (The "Symlink Smash" Fix) ===
 %post --erroronfail
-set -e # Die immediately if any command fails
-
+set -e
 echo ">>> [CHROOT] STARTING ASSET INJECTION <<<"
 
-# 1. FIX DNS (The "Blindness" Fix)
-# The chroot has no DNS by default. We force Google DNS so we can find GitHub.
+# 1. FIX NETWORK (CRITICAL FIX)
+# The /etc/resolv.conf in chroot is a broken symlink to /run/...
+# We must DELETE it before we can write to it.
+echo ">>> Fixing DNS..."
+rm -f /etc/resolv.conf
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 echo "nameserver 1.1.1.1" >> /etc/resolv.conf
 
-# 2. CLONE REPO (With Debugging)
+# 2. CLONE REPO
 echo ">>> Cloning Apex Configs..."
 rm -rf /tmp/apex-assets
+# We use verbose to see exactly what happens
+git clone --depth 1 --verbose https://github.com/Apex-Linux/apex-configs.git /tmp/apex-assets
 
-# We use 'git clone' with verbose output.
-# If this fails, we catch the error and print the network status.
-if ! git clone --depth 1 --verbose https://github.com/Apex-Linux/apex-configs.git /tmp/apex-assets; then
-    echo "❌ [ERROR] Git Clone Failed!"
-    echo "--- NETWORK DEBUG ---"
-    cat /etc/resolv.conf
-    curl -I https://github.com
-    exit 1
-fi
-
-# 3. VERIFY DOWNLOAD (Did we get the files?)
-echo ">>> Verifying Downloaded Files..."
+# 3. VERIFY DOWNLOAD
 if [ ! -f /tmp/apex-assets/iso/branding/logo.txt ]; then
-    echo "❌ [ERROR] Clone succeeded but files are missing!"
-    echo "Contents of /tmp/apex-assets:"
+    echo "❌ [CHROOT] ERROR: Download failed! Files missing."
     ls -R /tmp/apex-assets
     exit 1
 fi
-
-echo "✅ Repo cloned successfully. Files are present."
+echo "✅ Download Verified."
 
 # 4. INSTALL ASSETS
+echo ">>> Installing Assets..."
 mkdir -p /usr/share/apex-linux/
 mkdir -p /usr/share/calamares/branding/apex/
 
-echo ">>> Installing Logo & Calamares Assets..."
+# Copy all Calamares files (images + branding.desc)
 cp -f /tmp/apex-assets/iso/branding/calamares/* /usr/share/calamares/branding/apex/
+# Copy ASCII Logo
 cp -f /tmp/apex-assets/iso/branding/logo.txt /usr/share/apex-linux/logo.txt
 
 # 5. SELF-HEALING (Patch branding.desc)
 if ! grep -q "slideshow:" /usr/share/calamares/branding/apex/branding.desc; then
-    echo "⚠️ Patching missing 'slideshow' key in branding.desc..."
+    echo "⚠️ Patching missing 'slideshow' key..."
     echo 'slideshow: "show.qml"' >> /usr/share/calamares/branding/apex/branding.desc
 fi
 
-# 6. CLEANUP
+# 6. CLEANUP (CRITICAL)
+# Remove the repo
 rm -rf /tmp/apex-assets
-rm -f /etc/resolv.conf # Remove Google DNS so we don't leak it to the user
-echo ">>> [CHROOT] ASSETS INSTALLED & CLEANED UP <<<"
+# Remove our temporary DNS file so systemd can recreate the proper link on boot
+rm -f /etc/resolv.conf
+echo ">>> [CHROOT] ASSETS INSTALLED & NETWORK CLEANED <<<"
 %end
 
 # === STEP 2: IDENTITY SURGERY ===
