@@ -1,4 +1,5 @@
-# === APEX LINUX BRANDING===
+# === APEX LINUX BRANDING (Final Master Edition) ===
+# Features: Libadwaita Compile, DNS Fix, 1GB EFI, Theme Enforcer, KDE Polish
 
 %packages
 calamares
@@ -11,7 +12,10 @@ sed
 ImageMagick
 wget
 tar
-# Ensure Papirus is installed from repos
+# COMPILATION DEPENDENCIES (CRITICAL)
+gcc
+libadwaita-devel
+gtk4-devel
 papirus-icon-theme
 %end
 
@@ -21,6 +25,7 @@ set -e
 echo ">>> [CHROOT] STARTING ASSET INJECTION (DNS METHOD) <<<"
 
 # 1. FIX DNS (Symlink Smash - Critical Fix)
+# We must remove the broken symlink /etc/resolv.conf before writing to it.
 rm -f /etc/resolv.conf
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 echo "nameserver 1.1.1.1" >> /etc/resolv.conf
@@ -28,6 +33,7 @@ echo "nameserver 1.1.1.1" >> /etc/resolv.conf
 # 2. CLONE REPO
 echo ">>> Cloning Apex Configs..."
 rm -rf /tmp/apex-assets
+# Verbose clone to debug network issues
 if ! git clone --depth 1 --verbose https://github.com/Apex-Linux/apex-configs.git /tmp/apex-assets; then
     echo "❌ [CHROOT] Git Clone Failed!"
     cat /etc/resolv.conf
@@ -35,9 +41,9 @@ if ! git clone --depth 1 --verbose https://github.com/Apex-Linux/apex-configs.gi
     exit 1
 fi
 
-# 3. DOWNLOAD BIBATA CURSOR (FIXED URL)
+# 3. DOWNLOAD BIBATA CURSOR 
 echo ">>> Downloading Bibata Cursor..."
-# ERROR FIX: Changed extension from .tar.gz to .tar.xz
+
 wget -O /tmp/apex-assets/Bibata.tar.xz https://github.com/ful1e5/Bibata_Cursor/releases/download/v2.0.7/Bibata-Modern-Ice.tar.xz
 
 # 4. VERIFY DOWNLOADS
@@ -59,15 +65,15 @@ cp -f /tmp/apex-assets/iso/branding/logo.txt /usr/share/apex-linux/logo.txt
 
 # 6. INSTALL BIBATA CURSOR
 echo ">>> Installing Bibata..."
-# ERROR FIX: Using 'tar -xf' which auto-detects .xz format
+
 tar -xf /tmp/apex-assets/Bibata.tar.xz -C /usr/share/icons/
 
-# 7. COMPILE & INSTALL APEX UPDATER
+# 7. COMPILE & INSTALL APEX UPDATER (Fixed)
 echo ">>> Compiling Apex Updater..."
 APP_SRC="/tmp/apex-assets/apps/apex-updater"
 if [ -f "$APP_SRC/apex-updater.c" ]; then
-    # Compile
-    gcc -o /usr/bin/apex-updater "$APP_SRC/apex-updater.c" $(pkg-config --cflags --libs gtk4)
+
+    gcc -o /usr/bin/apex-updater "$APP_SRC/apex-updater.c" $(pkg-config --cflags --libs gtk4 libadwaita-1)
     
     # Install Assets
     cp "$APP_SRC/icon.png" /usr/share/pixmaps/apex-updater.png
@@ -87,12 +93,12 @@ Categories=System;Settings;
 StartupNotify=true
 EOF
     
-    # AUTOSTART (Run by default on login)
+    # Autostart
     echo ">>> Enabling Updater Autostart..."
     mkdir -p /etc/xdg/autostart
     ln -sf /usr/share/applications/apex-updater.desktop /etc/xdg/autostart/apex-updater.desktop
     
-    echo "✅ Apex Updater Installed & Autostarted."
+    echo "✅ Apex Updater Compiled & Installed."
 else
     echo "⚠️ Updater source code not found. Skipping."
 fi
@@ -151,31 +157,23 @@ echo ">>> [CHROOT] THEMES LOCKED IN <<<"
 %post --erroronfail
 set -e
 echo ">>> [CHROOT] POLISHING KDE DOCK & START MENU <<<"
-
 SQUID_ICON="/usr/share/calamares/branding/apex/squid.png"
 
-# 1. REMOVE DISCOVER FROM DEFAULT DOCK
+# 1. REMOVE DISCOVER
 LAYOUT_FILE="/usr/share/plasma/layout-templates/org.kde.plasma.desktop.defaultPanel/contents/layout.js"
 if [ -f "$LAYOUT_FILE" ]; then
-    echo ">>> Removing Discover from Default Panel..."
     sed -i '/org.kde.discover/d' "$LAYOUT_FILE"
 fi
 
-# 2. BRAND START MENU ICON (Squid)
-echo ">>> Branding Start Menu with Squid..."
+# 2. BRAND START MENU
 if command -v convert >/dev/null 2>&1; then
     convert "$SQUID_ICON" /tmp/start-here.svg
     convert "$SQUID_ICON" -resize 48x48 /tmp/start-here.png
-    
-    # Overwrite Papirus places
     find /usr/share/icons/Papirus-Dark -name "start-here*" -exec cp /tmp/start-here.svg {} \;
-    # Overwrite Pixmaps (Backup)
     cp /tmp/start-here.png /usr/share/pixmaps/start-here.png
     cp /tmp/start-here.png /usr/share/pixmaps/system-logo-white.png
 fi
-
 gtk-update-icon-cache -f /usr/share/icons/Papirus-Dark/ || true
-echo ">>> [CHROOT] KDE POLISHED <<<"
 %end
 
 # === STEP 4: IDENTITY SURGERY ===
@@ -189,7 +187,7 @@ sed -i 's/^HOME_URL=.*$/HOME_URL="https:\/\/github.com\/Apex-Linux"/' /etc/os-re
 echo -e "Apex Linux 2026.1 \n \l" > /etc/issue
 %end
 
-# === STEP 5: PLYMOUTH THEME (Resized & Fixed) ===
+# === STEP 5: PLYMOUTH THEME (Resized) ===
 %post --erroronfail
 set -e
 echo ">>> [CHROOT] FIXING BOOT SPLASH <<<"
@@ -199,7 +197,7 @@ SQUID_ICON="/usr/share/calamares/branding/apex/squid.png"
 
 mkdir -p "$THEME_DIR"
 
-# 1. Resize Logo (150x150)
+# Resize Logo (150x150)
 if command -v convert >/dev/null 2>&1; then
     convert "$SQUID_ICON" -resize 150x150 "$THEME_DIR/watermark.png"
     convert "$SQUID_ICON" -resize 150x150 "$SPINNER_DIR/watermark.png"
@@ -208,7 +206,6 @@ else
     cp "$SQUID_ICON" "$THEME_DIR/watermark.png"
 fi
 
-# 2. Copy Spinners & Configs
 cp -f "$SPINNER_DIR"/throbber-*.png "$THEME_DIR/" 2>/dev/null || true
 
 cat > "$THEME_DIR/apex.plymouth" << 'EOF'
@@ -230,15 +227,12 @@ logo_sprite = Sprite(logo_image);
 logo_sprite.SetPosition(logo_x, logo_y, 100);
 EOF
 
-# 3. Apply Theme
 plymouth-set-default-theme -R apex
-echo ">>> [CHROOT] PLYMOUTH FIXED <<<"
 %end
 
 # === STEP 6: VISUAL SEARCH & DESTROY ===
 %post --erroronfail
 set -e
-echo ">>> [CHROOT] REPLACING RESIDUAL ICONS <<<"
 SOURCE_ICON="/usr/share/calamares/branding/apex/squid.png"
 find /usr/share/pixmaps /usr/share/icons -type f \( -name "*fedora*logo*.png" -o -name "*fedora*logo*.svg" -o -name "*system-logo*.png" \) | while read -r FILE; do
     cp -f "$SOURCE_ICON" "$FILE"
@@ -246,7 +240,7 @@ done
 gtk-update-icon-cache -f /usr/share/icons/hicolor/ || true
 %end
 
-# === STEP 7: ASCII INTERCEPTOR (Fastfetch) ===
+# === STEP 7: ASCII INTERCEPTOR ===
 %post --erroronfail
 set -e
 mkdir -p /usr/share/fastfetch/presets
@@ -269,14 +263,15 @@ EOF
 chmod +x /usr/bin/neofetch
 %end
 
-# === STEP 8: CALAMARES UI POLISH (Qt6 Modern + 1GB EFI) ===
+# === STEP 8: CALAMARES UI POLISH (Qt6 + 1GB EFI) ===
 %post --erroronfail
 set -e
 echo ">>> [CHROOT] CONFIGURING CALAMARES UI <<<"
 rm -rf /usr/share/calamares/branding/fedora
 rm -rf /usr/share/calamares/branding/default
 
-# 1. Branding Desc (Dark Mode Colors)
+# Branding Desc
+# FIX: Using 'sidebarTextCurrent' for active step color
 cat > /usr/share/calamares/branding/apex/branding.desc << 'EOF'
 ---
 componentName:  apex
@@ -312,7 +307,7 @@ style:
    sidebarBackgroundCurrent: "#4FD1C5"
 EOF
 
-# 2. Sidebar (Qt6 Modern + Scaled Icon Fix)
+# Sidebar (Qt6 Modern Import)
 cat > /usr/share/calamares/branding/apex/sidebar.qml << 'EOF'
 import QtQuick
 import calamares.branding 1.0
@@ -344,7 +339,7 @@ Rectangle {
 }
 EOF
 
-# 3. Slideshow (Qt6 Modern + Dark Background Fix)
+# Slideshow (Qt6 Modern Import + Background)
 cat > /usr/share/calamares/branding/apex/show.qml << 'EOF'
 import QtQuick
 import calamares.slideshow 1.0
@@ -365,7 +360,7 @@ Presentation {
 }
 EOF
 
-# 4. Standard Configs (WITH 1GB EFI & GPT DEFAULT)
+# Partitioning
 cat > /etc/calamares/modules/partition.conf << 'EOF'
 efiSystemPartition: "/boot/efi"
 efiSystemPartitionSize: 1024M
@@ -411,7 +406,7 @@ hide-back-and-next-during-exec: false
 quit-at-end: false
 EOF
 
-# 5. Desktop Shortcut
+# Desktop Shortcut
 mkdir -p /home/liveuser/.config/autostart
 cat > /home/liveuser/.config/autostart/calamares.desktop << 'EOF'
 [Desktop Entry]
