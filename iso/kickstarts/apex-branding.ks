@@ -1,6 +1,4 @@
-# === APEX LINUX BRANDING (Visual & Logic Repair) ===
-# Fixes: Window Size, Sidebar Layout, Autostart Logic, Live User Theme
-
+# === APEX LINUX BRANDING (Definitive Master Edition) ===
 %packages
 calamares
 qt6-qtsvg
@@ -12,13 +10,11 @@ sed
 ImageMagick
 wget
 tar
-# CRITICAL DEPENDENCIES
 gcc
 libadwaita-devel
 gtk4-devel
 papirus-icon-theme
 potrace
-
 %end
 
 # === STEP 1: ASSET INJECTION & COMPILATION ===
@@ -59,11 +55,12 @@ if [ -f "$APP_SRC/apex-updater.c" ]; then
     mkdir -p /usr/share/apex-updater
     cp "$APP_SRC/logo.png" /usr/share/apex-updater/logo.png
     
+    # FIX: Force GTK_CSD=0 to ensure Window Buttons (Minimize/Close) appear on KDE
     cat > /usr/share/applications/apex-updater.desktop << 'EOF'
 [Desktop Entry]
 Name=Apex Updater
 Comment=Update your Apex Linux System
-Exec=apex-updater
+Exec=env GTK_CSD=0 apex-updater
 Icon=apex-updater
 Terminal=false
 Type=Application
@@ -140,18 +137,23 @@ set -e
 echo ">>> [CHROOT] POLISHING KDE <<<"
 SQUID_ICON="/usr/share/calamares/branding/apex/squid.png"
 
-# Remove Discover
+# 1. AGGRESSIVELY REMOVE DISCOVER FROM DOCK
 LAYOUT_FILE="/usr/share/plasma/layout-templates/org.kde.plasma.desktop.defaultPanel/contents/layout.js"
 if [ -f "$LAYOUT_FILE" ]; then
-    sed -i '/org.kde.discover/d' "$LAYOUT_FILE"
-    # Also remove system settings if desired, or keep it.
+    # Remove any line that mentions 'discover' to prevent broken icons
+    sed -i '/discover/d' "$LAYOUT_FILE"
 fi
 
-# Brand Start Menu
+# 2. BRAND START MENU (SQUID ICON)
 if command -v magick >/dev/null 2>&1; then
+    # Create SVG for Icon Theme
     magick "$SQUID_ICON" /tmp/start-here.svg
+    # Create PNG for Fallback
     magick "$SQUID_ICON" -resize 48x48 /tmp/start-here.png
+    
+    # Overwrite Papirus
     find /usr/share/icons/Papirus-Dark -name "start-here*" -exec cp /tmp/start-here.svg {} \;
+    # Overwrite Pixmaps
     cp /tmp/start-here.png /usr/share/pixmaps/start-here.png
     cp /tmp/start-here.png /usr/share/pixmaps/system-logo-white.png
 fi
@@ -169,10 +171,10 @@ sed -i 's/^HOME_URL=.*$/HOME_URL="https:\/\/github.com\/Apex-Linux"/' /etc/os-re
 echo -e "Apex Linux 2026.1 \n \l" > /etc/issue
 %end
 
-# === STEP 5: PLYMOUTH THEME (KERNEL FIX) ===
+# === STEP 5: PLYMOUTH THEME (ANIMATION FIX) ===
 %post --erroronfail
 set -e
-echo ">>> [CHROOT] FIXING BOOT SPLASH <<<"
+echo ">>> [CHROOT] FIXING BOOT SPLASH ANIMATION <<<"
 THEME_DIR="/usr/share/plymouth/themes/apex"
 SPINNER_DIR="/usr/share/plymouth/themes/spinner"
 SQUID_ICON="/usr/share/calamares/branding/apex/squid.png"
@@ -198,14 +200,34 @@ ImageDir=/usr/share/plymouth/themes/apex
 ScriptFile=/usr/share/plymouth/themes/apex/apex.script
 EOF
 
+# FIX: Added Rotation Logic
 cat > "$THEME_DIR/apex.script" << 'EOF'
 logo_image = Image("watermark.png");
+spinner_image = Image("throbber-00.png");
+
 screen_width = Window.GetWidth();
 screen_height = Window.GetHeight();
-logo_x = (screen_width / 2) - (logo_image.GetWidth() / 2);
-logo_y = (screen_height / 2) - (logo_image.GetHeight() / 2);
+center_x = screen_width / 2;
+center_y = screen_height / 2;
+
 logo_sprite = Sprite(logo_image);
-logo_sprite.SetPosition(logo_x, logo_y, 100);
+logo_sprite.SetX(center_x - logo_image.GetWidth() / 2);
+logo_sprite.SetY(center_y - logo_image.GetHeight() / 2 - 50);
+logo_sprite.SetZ(10);
+
+spinner_sprite = Sprite(spinner_image);
+spinner_sprite.SetX(center_x - spinner_image.GetWidth() / 2);
+spinner_sprite.SetY(center_y + 60);
+spinner_sprite.SetZ(20);
+
+# Animation Angle
+angle = 0;
+
+fun refresh_callback () {
+    angle += 0.1;
+    spinner_sprite.SetImage(spinner_image.Rotate(angle));
+}
+Plymouth.SetRefreshFunction (refresh_callback);
 EOF
 
 plymouth-set-default-theme apex
@@ -214,54 +236,21 @@ dracut --force --kver "$KVER"
 echo ">>> [CHROOT] PLYMOUTH FIXED <<<"
 %end
 
-# === STEP 6: VISUAL SEARCH & DESTROY ===
-%post --erroronfail
-set -e
-SOURCE_ICON="/usr/share/calamares/branding/apex/squid.png"
-find /usr/share/pixmaps /usr/share/icons -type f \( -name "*fedora*logo*.png" -o -name "*fedora*logo*.svg" -o -name "*system-logo*.png" \) | while read -r FILE; do
-    cp -f "$SOURCE_ICON" "$FILE"
-done
-gtk-update-icon-cache -f /usr/share/icons/hicolor/ || true
-%end
-
-# === STEP 7: ASCII INTERCEPTOR ===
-%post --erroronfail
-set -e
-mkdir -p /usr/share/fastfetch/presets
-cat > /usr/share/fastfetch/presets/apex.jsonc << 'EOF'
-{
-  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
-  "logo": { "source": "/usr/share/apex-linux/logo.txt", "type": "file", "color": {"1": "blue"}, "padding": {"top": 1, "left": 2} },
-  "modules": [ "title", "separator", "os", "host", "kernel", "uptime", "packages", "shell", "de", "memory", "break", "colors" ]
-}
-EOF
-cat > /usr/local/bin/fastfetch << 'EOF'
-#!/bin/bash
-exec /usr/bin/fastfetch --config /usr/share/fastfetch/presets/apex.jsonc "$@"
-EOF
-chmod +x /usr/local/bin/fastfetch
-cat > /usr/bin/neofetch << 'EOF'
-#!/bin/bash
-exec /usr/local/bin/fastfetch "$@"
-EOF
-chmod +x /usr/bin/neofetch
-%end
-
-# === STEP 8: CALAMARES UI POLISH (LAYOUT FIX) ===
+# === STEP 6: CALAMARES UI POLISH (LAYOUT FIX) ===
 %post --erroronfail
 set -e
 echo ">>> [CHROOT] CONFIGURING CALAMARES UI <<<"
 rm -rf /usr/share/calamares/branding/fedora
 rm -rf /usr/share/calamares/branding/default
 
-# Branding Desc
+# Branding Desc (Resized for Safety)
 cat > /usr/share/calamares/branding/apex/branding.desc << 'EOF'
 ---
 componentName:  apex
 welcomeStyleCalamares:   true
 welcomeExpandingLogo:   true
 windowExpanding:    normal
-windowSize: 1024px,720px
+windowSize: 1024px,768px
 windowPlacement: center
 sidebar: qml,bottom
 navigation: qml,right
@@ -290,8 +279,7 @@ style:
    sidebarBackgroundCurrent: "#4FD1C5"
 EOF
 
-# Sidebar
-# FIX: Explicit anchors to prevent sidebar disappearing
+# Sidebar (Explicit Anchors)
 cat > /usr/share/calamares/branding/apex/sidebar.qml << 'EOF'
 import QtQuick
 import calamares.branding 1.0
@@ -300,9 +288,12 @@ Rectangle {
     width: 200
     anchors.top: parent.top
     anchors.bottom: parent.bottom
+    anchors.left: parent.left
     color: Branding.styleString(Branding.SidebarBackground)
     Column {
-        anchors.fill: parent
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.right: parent.right
         anchors.margins: 20
         spacing: 20
         Image {
@@ -330,7 +321,7 @@ Rectangle {
 }
 EOF
 
-# Slideshow
+# Slideshow (Dark Background)
 cat > /usr/share/calamares/branding/apex/show.qml << 'EOF'
 import QtQuick
 import calamares.slideshow 1.0
