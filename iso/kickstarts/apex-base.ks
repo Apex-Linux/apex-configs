@@ -1,4 +1,7 @@
-# === APEX LINUX BASE (Compiler & Theme Ready) ===
+# === APEX LINUX BASE SYSTEM ===
+# Version: 2026.1
+# Description: Core system definition and repository setup.
+
 lang en_US.UTF-8
 keyboard us
 timezone UTC
@@ -13,14 +16,24 @@ part / --size 8192 --fstype ext4
 rootpw --lock --iscrypted locked
 bootloader --append="rd.live.check=0 rhgb quiet"
 
-# NETWORK
+# === REPOSITORIES ===
 network --bootproto=dhcp --device=link --activate
 url --mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=fedora-43&arch=$basearch
 repo --name=updates --mirrorlist=https://mirrors.fedoraproject.org/metalink?repo=updates-released-f43&arch=$basearch
 
+# 1. APEX CORE
+repo --name=apex-core --baseurl=https://download.copr.fedorainfracloud.org/results/ackerman/apex-core/fedora-$releasever-$basearch/ --cost=50
+
+# 2. TERRA REPO 
+repo --name=terra --baseurl=https://repos.fyralabs.com/terra$releasever --cost=60 --noverifyssl
+
 %packages
+# === CORE GROUPS ===
 @core
 @hardware-support
+@fonts
+
+# === KERNEL & BOOT ===
 kernel
 kernel-modules
 kernel-modules-extra
@@ -31,13 +44,16 @@ efibootmgr
 grub2-efi-x64-cdboot
 syslinux
 
-# FONTS
-@fonts
-google-noto-sans-fonts
-google-noto-serif-fonts
-google-noto-emoji-fonts
+# === APEX IDENTITY & REPOS ===
+# We install our custom release package.
+# Note: We EXCLUDE fedora-release at the bottom to prevent conflicts.
+apex-release
 
-# LIVE TOOLS
+# Install Terra keys and repo definitions permanently
+terra-release 
+distribution-gpg-keys
+
+# === LIVE TOOLS ===
 dracut-live
 dracut-network
 dracut-config-generic
@@ -45,18 +61,7 @@ livesys-scripts
 plymouth
 plymouth-system-theme
 
-# === COMPILATION TOOLS (For Apex Updater) ===
-gcc
-make
-gtk4-devel
-libadwaita-devel
-pkgconf
-
-# === THEMES & ICONS (From Repos) ===
-papirus-icon-theme
-gnome-themes-extra
-
-# === FILESYSTEMS ===
+# === FILESYSTEM SUPPORT ===
 kde-partitionmanager
 btrfs-progs
 xfsprogs
@@ -65,6 +70,14 @@ dosfstools
 ntfs-3g
 fuse
 f2fs-tools
+gparted
+
+# === COMPILATION TOOLS (Temporary) ===
+gcc
+make
+gtk4-devel
+libadwaita-devel
+pkgconf
 
 # === UTILITIES ===
 git
@@ -78,13 +91,17 @@ fish
 zsh-syntax-highlighting
 zsh-autosuggestions
 
-# CLEANUP
+# === CLEANUP (The "Kill List") ===
 -anaconda*
 -initial-setup*
+# CRITICAL: Remove Fedora identity so Apex identity can take over
+-fedora-release
+-fedora-release-identity*
+-generic-release
 %end
 
 %post --erroronfail
-# 1. DNF SPEED
+# 1. CONFIGURE DNF
 cat > /etc/dnf/dnf.conf <<EOF
 [main]
 gpgcheck=1
@@ -99,25 +116,22 @@ fastestmirror=True
 keepcache=True
 EOF
 
-# 2. FORCE KERNEL UPDATE
-dnf update -y
+# 2. TERRA PRIORITY FIX
+# Ensure Terra doesn't overwrite core system files unless necessary
+dnf config-manager --save --setopt=terra.priority=90
 
-# 3. IDENTITY
-sed -i 's/^NAME=.*$/NAME="Apex Linux"/' /etc/os-release
-sed -i 's/^PRETTY_NAME=.*$/PRETTY_NAME="Apex Linux"/' /etc/os-release
-sed -i 's/^ID=.*$/ID=apex/' /etc/os-release
-echo -e "Apex Linux \n \l" > /etc/issue
-
-# 4. DRACUT FIX
+# 3. DRACUT CONFIG (For Live Boot)
 echo 'add_dracutmodules+=" network livenet "' > /etc/dracut.conf.d/apex-live.conf
 
-# 5. USER
+# 4. CREATE LIVE USER
 useradd -m -c "Live System User" liveuser
 passwd -d liveuser > /dev/null
 usermod -aG wheel liveuser
+
+# 5. SUDOERS SETUP
 echo "%wheel ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/wheel
 chmod 0440 /etc/sudoers.d/wheel
 
-# 6. CLEANUP CACHE
+# 6. CLEANUP
 dnf clean all
 %end
