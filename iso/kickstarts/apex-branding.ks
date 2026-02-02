@@ -1,4 +1,5 @@
-# === APEX LINUX BRANDING (Dracut Kernel Fix) ===
+# === APEX LINUX BRANDING (Visual & Logic Repair) ===
+# Fixes: Window Size, Sidebar Layout, Autostart Logic, Live User Theme
 
 %packages
 calamares
@@ -17,6 +18,7 @@ libadwaita-devel
 gtk4-devel
 papirus-icon-theme
 potrace
+
 %end
 
 # === STEP 1: ASSET INJECTION & COMPILATION ===
@@ -24,46 +26,31 @@ potrace
 set -e
 echo ">>> [CHROOT] STARTING ASSET INJECTION <<<"
 
-# 1. FIX DNS (Symlink Smash)
+# 1. FIX DNS
 rm -f /etc/resolv.conf
 echo "nameserver 8.8.8.8" > /etc/resolv.conf
 echo "nameserver 1.1.1.1" >> /etc/resolv.conf
 
 # 2. CLONE REPO
-echo ">>> Cloning Apex Configs..."
 rm -rf /tmp/apex-assets
 if ! git clone --depth 1 --verbose https://github.com/Apex-Linux/apex-configs.git /tmp/apex-assets; then
     echo "❌ [CHROOT] Git Clone Failed!"
-    cat /etc/resolv.conf
-    curl -I https://github.com
     exit 1
 fi
 
 # 3. DOWNLOAD BIBATA
-echo ">>> Downloading Bibata Cursor..."
 wget -O /tmp/apex-assets/Bibata.tar.xz https://github.com/ful1e5/Bibata_Cursor/releases/download/v2.0.7/Bibata-Modern-Ice.tar.xz
 
-# 4. VERIFY DOWNLOADS
-if [ ! -f /tmp/apex-assets/iso/branding/logo.txt ]; then
-    echo "❌ [CHROOT] Logo missing!"
-    exit 1
-fi
-if [ ! -f /tmp/apex-assets/Bibata.tar.xz ]; then
-    echo "❌ [CHROOT] Bibata download failed! (Check URL/Network)"
-    exit 1
-fi
-
-# 5. INSTALL ASSETS
-echo ">>> Installing Assets..."
+# 4. INSTALL ASSETS
 mkdir -p /usr/share/apex-linux/
 mkdir -p /usr/share/calamares/branding/apex/
 cp -f /tmp/apex-assets/iso/branding/calamares/* /usr/share/calamares/branding/apex/
 cp -f /tmp/apex-assets/iso/branding/logo.txt /usr/share/apex-linux/logo.txt
 
-# 6. INSTALL BIBATA
+# 5. INSTALL BIBATA
 tar -xf /tmp/apex-assets/Bibata.tar.xz -C /usr/share/icons/
 
-# 7. COMPILE APEX UPDATER
+# 6. COMPILE APEX UPDATER
 echo ">>> Compiling Apex Updater..."
 APP_SRC="/tmp/apex-assets/apps/apex-updater"
 if [ -f "$APP_SRC/apex-updater.c" ]; then
@@ -84,28 +71,31 @@ Categories=System;Settings;
 StartupNotify=true
 EOF
     
-    mkdir -p /etc/xdg/autostart
-    ln -sf /usr/share/applications/apex-updater.desktop /etc/xdg/autostart/apex-updater.desktop
-    echo "✅ Apex Updater Installed."
+    # FIX: Move Autostart to /etc/skel (Only for new users, NOT Live USB)
+    mkdir -p /etc/skel/.config/autostart
+    ln -sf /usr/share/applications/apex-updater.desktop /etc/skel/.config/autostart/apex-updater.desktop
+    echo "✅ Apex Updater Scheduled for New Users."
 fi
 
-# 8. CLEANUP
+# 7. CLEANUP
 rm -rf /tmp/apex-assets
 rm -f /etc/resolv.conf
 echo ">>> [CHROOT] ASSETS INSTALLED <<<"
 %end
 
-# === STEP 2: THEME ENFORCER ===
+# === STEP 2: THEME ENFORCER (GLOBAL + LIVE USER) ===
 %post --erroronfail
 set -e
 echo ">>> [CHROOT] ENFORCING THEMES <<<"
 
+# System Defaults
 mkdir -p /usr/share/icons/default
 cat > /usr/share/icons/default/index.theme << 'EOF'
 [Icon Theme]
 Inherits=Bibata-Modern-Ice
 EOF
 
+# GTK Settings
 mkdir -p /etc/gtk-3.0
 cat > /etc/gtk-3.0/settings.ini << 'EOF'
 [Settings]
@@ -114,6 +104,7 @@ gtk-cursor-theme-name=Bibata-Modern-Ice
 gtk-theme-name=Adwaita-dark
 EOF
 
+# KDE Settings (Template for New Users)
 mkdir -p /etc/skel/.config
 cat > /etc/skel/.config/kcminputrc << 'EOF'
 [Mouse]
@@ -128,12 +119,22 @@ ColorScheme=BreezeDark
 Name=Breeze Dark
 EOF
 
+# FIX: Force Settings onto the Live User IMMEDIATELY
+if id "liveuser" &>/dev/null; then
+    echo ">>> Applying themes to Live User..."
+    mkdir -p /home/liveuser/.config
+    cp /etc/skel/.config/kcminputrc /home/liveuser/.config/
+    cp /etc/skel/.config/kdeglobals /home/liveuser/.config/
+    chown -R liveuser:liveuser /home/liveuser
+fi
+
+# Apply to Root
 mkdir -p /root/.config
 cp /etc/skel/.config/kcminputrc /root/.config/
 cp /etc/skel/.config/kdeglobals /root/.config/
 %end
 
-# === STEP 3: KDE POLISH ===
+# === STEP 3: KDE DOCK & START MENU POLISH ===
 %post --erroronfail
 set -e
 echo ">>> [CHROOT] POLISHING KDE <<<"
@@ -143,6 +144,7 @@ SQUID_ICON="/usr/share/calamares/branding/apex/squid.png"
 LAYOUT_FILE="/usr/share/plasma/layout-templates/org.kde.plasma.desktop.defaultPanel/contents/layout.js"
 if [ -f "$LAYOUT_FILE" ]; then
     sed -i '/org.kde.discover/d' "$LAYOUT_FILE"
+    # Also remove system settings if desired, or keep it.
 fi
 
 # Brand Start Menu
@@ -206,21 +208,9 @@ logo_sprite = Sprite(logo_image);
 logo_sprite.SetPosition(logo_x, logo_y, 100);
 EOF
 
-# FIX: Do not use -R here. It tries to build for the running Azure kernel.
 plymouth-set-default-theme apex
-
-# FIX: Find the INSTALLED kernel version inside the chroot
 KVER=$(ls /lib/modules | sort -V | tail -n 1)
-if [ -n "$KVER" ]; then
-    echo ">>> Rebuilding initramfs for kernel: $KVER"
-    # Build for the specific Fedora kernel we just installed
-    dracut --force --kver "$KVER"
-else
-    echo "❌ [ERROR] Could not detect installed kernel version!"
-    ls -l /lib/modules
-    exit 1
-fi
-
+dracut --force --kver "$KVER"
 echo ">>> [CHROOT] PLYMOUTH FIXED <<<"
 %end
 
@@ -257,7 +247,7 @@ EOF
 chmod +x /usr/bin/neofetch
 %end
 
-# === STEP 8: CALAMARES UI POLISH ===
+# === STEP 8: CALAMARES UI POLISH (LAYOUT FIX) ===
 %post --erroronfail
 set -e
 echo ">>> [CHROOT] CONFIGURING CALAMARES UI <<<"
@@ -271,7 +261,7 @@ componentName:  apex
 welcomeStyleCalamares:   true
 welcomeExpandingLogo:   true
 windowExpanding:    normal
-windowSize: 800px,520px
+windowSize: 1024px,720px
 windowPlacement: center
 sidebar: qml,bottom
 navigation: qml,right
@@ -301,15 +291,20 @@ style:
 EOF
 
 # Sidebar
+# FIX: Explicit anchors to prevent sidebar disappearing
 cat > /usr/share/calamares/branding/apex/sidebar.qml << 'EOF'
 import QtQuick
 import calamares.branding 1.0
 Rectangle {
     id: sidebar
-    width: 200; height: 520
+    width: 200
+    anchors.top: parent.top
+    anchors.bottom: parent.bottom
     color: Branding.styleString(Branding.SidebarBackground)
     Column {
-        anchors.fill: parent; anchors.margins: 10; spacing: 20
+        anchors.fill: parent
+        anchors.margins: 20
+        spacing: 20
         Image {
             id: logo
             source: Branding.image(Branding.ProductLogo)
@@ -326,6 +321,9 @@ Rectangle {
                 font.pixelSize: 16
                 font.bold: model.current
                 anchors.horizontalCenter: parent.horizontalCenter
+                wrapMode: Text.WordWrap
+                width: parent.width
+                horizontalAlignment: Text.AlignHCenter
             }
         }
     }

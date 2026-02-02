@@ -1,5 +1,6 @@
-# Apex Linux KDE Edition
+# === APEX LINUX KDE EDITION ===
 # Version: 2026.1
+# Description: Package definitions and Service activation only.
 
 # INCLUDE SHARED COMPONENTS
 %include apex-base.ks
@@ -7,7 +8,7 @@
 
 # === KDE PACKAGES ===
 %packages
-# Desktop Environment
+# Core Desktop
 plasma-desktop
 plasma-workspace
 plasma-workspace-wayland
@@ -29,12 +30,18 @@ pipewire-alsa
 pipewire-pulseaudio
 wireplumber
 
-# Remove KDE Bloat
+# === BLOAT REMOVAL (Kill List) ===
+# 1. Kill Discover (App Store) completely
+-libsForQt5.discover
+-plasma-discover
+-plasma-discover-notifier
+-discover
+-rpmostree-client
+
+# 2. Remove Fedora/KDE Defaults we don't want
 -plasma-welcome
 -plasma-welcome-agent
--libreoffice-*
--thunderbird
--firefox*
+-dnfdragora
 -kmail
 -kontact
 -akregator
@@ -44,30 +51,18 @@ wireplumber
 -kmines
 -kmahjongg
 -kpat
--dnfdragora
+-libreoffice-*
+-thunderbird
+-firefox*
 %end
 
-# === KDE SPECIFIC CONFIG ===
+# === SYSTEM CONFIGURATION ===
 %post
-# 1. DARK MODE SETUP
-mkdir -p /home/liveuser/.config
-mkdir -p /etc/skel/.config
-cat > /tmp/kdeglobals << 'EOF'
-[General]
-ColorScheme=BreezeDark
-Name=Breeze Dark
-[KDE]
-LookAndFeelPackage=org.kde.breezedark.desktop
-EOF
-cp /tmp/kdeglobals /home/liveuser/.config/kdeglobals
-cp /tmp/kdeglobals /etc/skel/.config/kdeglobals
-chown -R liveuser:liveuser /home/liveuser/.config
-
-# 2. ENABLE SERVICES
+# 1. ENABLE CRITICAL SERVICES
 systemctl enable sddm
 systemctl enable NetworkManager
 
-# 2. AUTOLOGIN
+# 2. CONFIGURE AUTOLOGIN (For Live ISO)
 mkdir -p /etc/sddm.conf.d
 cat > /etc/sddm.conf.d/autologin.conf << EOF
 [Autologin]
@@ -76,6 +71,7 @@ Session=plasma
 EOF
 
 # 3. CLEANUP
+# Remove random seed to ensure unique keys on new installs
 rm -f /var/lib/systemd/random-seed
 dnf clean all
 %end
